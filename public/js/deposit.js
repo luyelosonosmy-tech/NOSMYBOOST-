@@ -1,39 +1,65 @@
 /*
 ========================================
 NOSMYBOOST🇧🇪
-DÉPÔTS CLIENT
+DEPOSIT JAVASCRIPT
 ========================================
 */
-
-const TOKEN_KEY = "nosmyboost_token";
 
 const token =
-  localStorage.getItem(TOKEN_KEY);
-
-
-/*
-========================================
-PROTECTION
-========================================
-*/
+  localStorage.getItem("nosmyboost_token");
 
 if (!token) {
-
-  window.location.href =
-    "/login.html";
-
+  window.location.href = "/login.html";
 }
 
 
 /*
 ========================================
-ÉTAT DU DÉPÔT
+ÉLÉMENTS
 ========================================
 */
 
-let selectedAmount = 0;
+const depositForm =
+  document.getElementById("depositForm");
 
-let selectedMethod = "";
+const amountInput =
+  document.getElementById("amount");
+
+const methodInput =
+  document.getElementById("method");
+
+const proofInput =
+  document.getElementById("proof");
+
+const paymentInstructions =
+  document.getElementById(
+    "paymentInstructions"
+  );
+
+const depositMessage =
+  document.getElementById(
+    "depositMessage"
+  );
+
+const depositButton =
+  document.getElementById(
+    "depositButton"
+  );
+
+const currentBalance =
+  document.getElementById(
+    "currentBalance"
+  );
+
+const depositHistory =
+  document.getElementById(
+    "depositHistory"
+  );
+
+const logoutButton =
+  document.getElementById(
+    "logoutButton"
+  );
 
 
 /*
@@ -41,182 +67,205 @@ let selectedMethod = "";
 NUMÉROS DE PAIEMENT
 ========================================
 
-⚠️ À REMPLACER PAR TES VRAIS NUMÉROS
-AVANT LA MISE EN PRODUCTION.
+⚠️ LAISSÉS VIDES POUR LE MOMENT.
+On les configurera ensemble avant la mise
+en production.
+========================================
 */
 
-const PAYMENT_NUMBERS = {
+const PAYMENT_METHODS = {
 
-  airtel:
-    "À CONFIGURER",
+  airtel: {
+    name: "Airtel Money",
+    number: ""
+  },
 
-  mpesa:
-    "À CONFIGURER",
+  mpesa: {
+    name: "Vodacom M-Pesa",
+    number: ""
+  },
 
-  orange:
-    "À CONFIGURER"
+  orange: {
+    name: "Orange Money",
+    number: ""
+  }
 
 };
 
 
 /*
 ========================================
-NOMS DES MOYENS
+API
 ========================================
 */
 
-const PAYMENT_NAMES = {
+async function api(
+  url,
+  options = {}
+) {
 
-  airtel:
-    "Airtel Money",
+  const response =
+    await fetch(
+      url,
+      {
+        ...options,
 
-  mpesa:
-    "Vodacom M-Pesa",
+        headers: {
+          "Content-Type":
+            "application/json",
 
-  orange:
-    "Orange Money"
+          "Authorization":
+            `Bearer ${token}`,
 
-};
-
-
-/*
-========================================
-CHOIX DU MONTANT
-========================================
-*/
-
-document
-  .querySelectorAll(
-    ".amount-btn"
-  )
-  .forEach(button => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        selectedAmount =
-          Number(
-            button.dataset.amount
-          );
-
-
-        const customAmount =
-          document.getElementById(
-            "customAmount"
-          );
-
-        const depositAmount =
-          document.getElementById(
-            "depositAmount"
-          );
-
-
-        if (customAmount) {
-
-          customAmount.value = "";
-
+          ...(options.headers || {})
         }
-
-
-        if (depositAmount) {
-
-          depositAmount.value =
-            selectedAmount;
-
-        }
-
-
-        document
-          .querySelectorAll(
-            ".amount-btn"
-          )
-          .forEach(item => {
-
-            item.classList.remove(
-              "btn-primary"
-            );
-
-            item.classList.add(
-              "btn-outline"
-            );
-
-          });
-
-
-        button.classList.remove(
-          "btn-outline"
-        );
-
-        button.classList.add(
-          "btn-primary"
-        );
-
       }
     );
 
-  });
+
+  const data =
+    await response.json()
+      .catch(() => ({}));
+
+
+  if (
+    response.status === 401 ||
+    response.status === 403
+  ) {
+
+    localStorage.removeItem(
+      "nosmyboost_token"
+    );
+
+    window.location.href =
+      "/login.html";
+
+    throw new Error(
+      "Session expirée."
+    );
+
+  }
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.message ||
+      "Une erreur est survenue."
+    );
+
+  }
+
+
+  return data;
+
+}
 
 
 /*
 ========================================
-MONTANT PERSONNALISÉ
+INSTRUCTIONS PAIEMENT
 ========================================
 */
 
-const customAmount =
-  document.getElementById(
-    "customAmount"
-  );
+function showPaymentInstructions(
+  method
+) {
+
+  if (!paymentInstructions)
+    return;
 
 
-if (customAmount) {
+  if (!method) {
 
-  customAmount.addEventListener(
-    "input",
+    paymentInstructions.innerHTML = `
+      <p>
+        Choisissez un moyen de paiement
+        pour voir les instructions.
+      </p>
+    `;
+
+    return;
+
+  }
+
+
+  const payment =
+    PAYMENT_METHODS[method];
+
+
+  if (!payment)
+    return;
+
+
+  if (!payment.number) {
+
+    paymentInstructions.innerHTML = `
+
+      <div>
+
+        <strong>
+          ${payment.name}
+        </strong>
+
+        <p>
+          Le numéro de paiement sera affiché
+          après configuration du compte de
+          paiement NOSMYBOOST🇧🇪.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  paymentInstructions.innerHTML = `
+
+    <div>
+
+      <strong>
+        ${payment.name}
+      </strong>
+
+      <p>
+        Envoyez votre montant au numéro :
+      </p>
+
+      <strong>
+        ${escapeHtml(payment.number)}
+      </strong>
+
+      <p>
+        Après le paiement, indiquez votre
+        référence de transaction ci-dessous.
+      </p>
+
+    </div>
+
+  `;
+
+}
+
+
+/*
+========================================
+CHANGEMENT MÉTHODE
+========================================
+*/
+
+if (methodInput) {
+
+  methodInput.addEventListener(
+    "change",
     () => {
 
-      const value =
-        Number(
-          customAmount.value
-        );
-
-
-      selectedAmount =
-        Number.isFinite(value)
-          ? value
-          : 0;
-
-
-      const depositAmount =
-        document.getElementById(
-          "depositAmount"
-        );
-
-
-      if (depositAmount) {
-
-        depositAmount.value =
-          selectedAmount || "";
-
-      }
-
-
-      document
-        .querySelectorAll(
-          ".amount-btn"
-        )
-        .forEach(item => {
-
-          item.classList.remove(
-            "btn-primary"
-          );
-
-          item.classList.add(
-            "btn-outline"
-          );
-
-        });
+      showPaymentInstructions(
+        methodInput.value
+      );
 
     }
   );
@@ -226,161 +275,60 @@ if (customAmount) {
 
 /*
 ========================================
-CHOIX DU MOYEN DE PAIEMENT
+ENVOYER DÉPÔT
 ========================================
 */
-
-document
-  .querySelectorAll(
-    ".payment-method"
-  )
-  .forEach(button => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        selectedMethod =
-          button.dataset.method;
-
-
-        const instructions =
-          document.getElementById(
-            "paymentInstructions"
-          );
-
-        const text =
-          document.getElementById(
-            "selectedPaymentText"
-          );
-
-        const number =
-          document.getElementById(
-            "paymentNumber"
-          );
-
-
-        /*
-        ================================
-        STYLE SÉLECTION
-        ================================
-        */
-
-        document
-          .querySelectorAll(
-            ".payment-method"
-          )
-          .forEach(item => {
-
-            item.style.borderColor =
-              "#e7ebf1";
-
-          });
-
-
-        button.style.borderColor =
-          "#111827";
-
-
-        /*
-        ================================
-        AFFICHAGE INSTRUCTIONS
-        ================================
-        */
-
-        if (instructions) {
-
-          instructions.style.display =
-            "block";
-
-        }
-
-
-        if (text) {
-
-          text.textContent =
-            `Vous avez choisi ${PAYMENT_NAMES[selectedMethod]}. Effectuez le paiement avec le numéro ci-dessous.`;
-
-        }
-
-
-        if (number) {
-
-          number.textContent =
-            PAYMENT_NUMBERS[
-              selectedMethod
-            ] ||
-            "À configurer";
-
-        }
-
-      }
-    );
-
-  });
-
-
-/*
-========================================
-ENVOI DU DÉPÔT
-========================================
-*/
-
-const depositForm =
-  document.getElementById(
-    "depositForm"
-  );
-
 
 if (depositForm) {
 
   depositForm.addEventListener(
     "submit",
-    async event => {
+    async (event) => {
 
       event.preventDefault();
 
 
-      const message =
-        document.getElementById(
-          "depositMessage"
+      const amount =
+        Number(
+          amountInput?.value
         );
 
-      const button =
-        document.getElementById(
-          "depositButton"
-        );
+
+      const method =
+        methodInput?.value;
+
 
       const proof =
-        document.getElementById(
-          "proof"
-        ).value
-        .trim();
+        proofInput?.value.trim();
 
 
       /*
-      ================================
+      ==============================
       VALIDATION
-      ================================
+      ==============================
       */
 
       if (
-        !selectedAmount ||
-        selectedAmount < 1000
+        !Number.isFinite(amount) ||
+        amount <= 0
       ) {
 
-        message.textContent =
-          "Le montant minimum est de 1 000 CDF.";
+        showMessage(
+          "Veuillez entrer un montant valide.",
+          "error"
+        );
 
         return;
 
       }
 
 
-      if (!selectedMethod) {
+      if (!method) {
 
-        message.textContent =
-          "Choisissez un moyen de paiement.";
+        showMessage(
+          "Veuillez choisir un moyen de paiement.",
+          "error"
+        );
 
         return;
 
@@ -389,55 +337,49 @@ if (depositForm) {
 
       if (!proof) {
 
-        message.textContent =
-          "Veuillez fournir la référence ou la preuve du paiement.";
+        showMessage(
+          "Veuillez entrer la référence du paiement.",
+          "error"
+        );
 
         return;
 
       }
 
 
-      /*
-      ================================
-      CHARGEMENT
-      ================================
-      */
-
-      button.disabled = true;
-
-      button.textContent =
-        "Envoi en cours...";
-
-      message.textContent = "";
-
-
       try {
 
-        const response =
-          await fetch(
+        depositButton.disabled =
+          true;
+
+        depositButton.textContent =
+          "Envoi en cours...";
+
+
+        showMessage(
+          "Enregistrement de votre demande...",
+          "info"
+        );
+
+
+        /*
+        ==============================
+        API
+        ==============================
+        */
+
+        const data =
+          await api(
             "/api/deposits",
             {
-
               method: "POST",
-
-              headers: {
-
-                "Content-Type":
-                  "application/json",
-
-                "Authorization":
-                  `Bearer ${token}`
-
-              },
 
               body:
                 JSON.stringify({
 
-                  amount:
-                    selectedAmount,
+                  amount,
 
-                  method:
-                    selectedMethod,
+                  method,
 
                   proof
 
@@ -447,97 +389,42 @@ if (depositForm) {
           );
 
 
-        const data =
-          await response.json();
-
-
-        if (
-          !response.ok ||
-          !data.success
-        ) {
-
-          message.textContent =
-            data.message ||
-            "Impossible d'envoyer la demande.";
-
-          return;
-
-        }
-
-
-        /*
-        ================================
-        SUCCÈS
-        ================================
-        */
-
-        message.textContent =
-          "Demande envoyée avec succès. Votre dépôt est en attente de validation par l'administrateur.";
+        showMessage(
+          data.message ||
+          "Votre demande de dépôt a été envoyée.",
+          "success"
+        );
 
 
         depositForm.reset();
 
-
-        selectedAmount = 0;
-
-        selectedMethod = "";
+        showPaymentInstructions("");
 
 
-        const instructions =
-          document.getElementById(
-            "paymentInstructions"
-          );
+        await loadBalance();
 
-
-        if (instructions) {
-
-          instructions.style.display =
-            "none";
-
-        }
-
-
-        document
-          .querySelectorAll(
-            ".amount-btn"
-          )
-          .forEach(item => {
-
-            item.classList.remove(
-              "btn-primary"
-            );
-
-            item.classList.add(
-              "btn-outline"
-            );
-
-          });
-
-
-        document
-          .querySelectorAll(
-            ".payment-method"
-          )
-          .forEach(item => {
-
-            item.style.borderColor =
-              "#e7ebf1";
-
-          });
+        await loadDepositHistory();
 
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          error
+        );
 
-        message.textContent =
-          "Impossible de contacter le serveur.";
+
+        showMessage(
+          error.message,
+          "error"
+        );
+
 
       } finally {
 
-        button.disabled = false;
+        depositButton.disabled =
+          false;
 
-        button.textContent =
+        depositButton.textContent =
           "Envoyer la demande";
 
       }
@@ -545,4 +432,432 @@ if (depositForm) {
     }
   );
 
-          }
+}
+
+
+/*
+========================================
+CHARGER SOLDE
+========================================
+*/
+
+async function loadBalance() {
+
+  if (!currentBalance)
+    return;
+
+
+  try {
+
+    const data =
+      await api(
+        "/api/auth/me"
+      );
+
+
+    const user =
+      data.user;
+
+
+    currentBalance.textContent =
+      formatMoney(
+        user.balance
+      ) + " CDF";
+
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+
+    currentBalance.textContent =
+      "—";
+
+  }
+
+}
+
+
+/*
+========================================
+HISTORIQUE DÉPÔTS
+========================================
+*/
+
+async function loadDepositHistory() {
+
+  if (!depositHistory)
+    return;
+
+
+  try {
+
+    const data =
+      await api(
+        "/api/deposits/my"
+      );
+
+
+    const deposits =
+      data.deposits || [];
+
+
+    if (!deposits.length) {
+
+      depositHistory.innerHTML = `
+
+        <div class="empty-state">
+
+          <span>
+            💳
+          </span>
+
+          <p>
+            Aucun dépôt pour le moment.
+          </p>
+
+        </div>
+
+      `;
+
+      return;
+
+    }
+
+
+    depositHistory.innerHTML =
+      "";
+
+
+    deposits.forEach(
+      deposit => {
+
+        const item =
+          document.createElement(
+            "div"
+          );
+
+
+        item.className =
+          "order-item";
+
+
+        item.innerHTML = `
+
+          <div>
+
+            <strong>
+              Dépôt #${deposit.id}
+            </strong>
+
+            <p>
+              ${formatMethod(
+                deposit.method
+              )}
+            </p>
+
+          </div>
+
+
+          <div>
+
+            <strong>
+              ${formatMoney(
+                deposit.amount
+              )} CDF
+            </strong>
+
+            <span
+              class="order-status ${getStatusClass(
+                deposit.status
+              )}"
+            >
+              ${formatStatus(
+                deposit.status
+              )}
+            </span>
+
+          </div>
+
+        `;
+
+
+        depositHistory.appendChild(
+          item
+        );
+
+      }
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+  }
+
+}
+
+
+/*
+========================================
+MESSAGE
+========================================
+*/
+
+function showMessage(
+  text,
+  type
+) {
+
+  if (!depositMessage)
+    return;
+
+
+  depositMessage.textContent =
+    text;
+
+
+  depositMessage.style.padding =
+    "12px 16px";
+
+  depositMessage.style.marginTop =
+    "15px";
+
+  depositMessage.style.borderRadius =
+    "10px";
+
+
+  if (type === "success") {
+
+    depositMessage.style.background =
+      "#ecfdf3";
+
+    depositMessage.style.color =
+      "#067647";
+
+  }
+
+
+  if (type === "error") {
+
+    depositMessage.style.background =
+      "#fef3f2";
+
+    depositMessage.style.color =
+      "#b42318";
+
+  }
+
+
+  if (type === "info") {
+
+    depositMessage.style.background =
+      "#eff8ff";
+
+    depositMessage.style.color =
+      "#175cd1";
+
+  }
+
+}
+
+
+/*
+========================================
+FORMAT ARGENT
+========================================
+*/
+
+function formatMoney(
+  amount
+) {
+
+  return Number(
+    amount || 0
+  ).toLocaleString(
+    "fr-FR",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }
+  );
+
+}
+
+
+/*
+========================================
+FORMAT MÉTHODE
+========================================
+*/
+
+function formatMethod(
+  method
+) {
+
+  const methods = {
+
+    airtel:
+      "Airtel Money",
+
+    mpesa:
+      "Vodacom M-Pesa",
+
+    orange:
+      "Orange Money"
+
+  };
+
+
+  return methods[
+    String(method || "")
+      .toLowerCase()
+  ] || method || "—";
+
+}
+
+
+/*
+========================================
+FORMAT STATUT
+========================================
+*/
+
+function formatStatus(
+  status
+) {
+
+  const statuses = {
+
+    pending:
+      "⏳ En attente",
+
+    approved:
+      "✅ Validé",
+
+    rejected:
+      "❌ Refusé"
+
+  };
+
+
+  return statuses[
+    String(status || "")
+      .toLowerCase()
+  ] || status || "Inconnu";
+
+}
+
+
+/*
+========================================
+CLASSE STATUT
+========================================
+*/
+
+function getStatusClass(
+  status
+) {
+
+  const value =
+    String(
+      status || ""
+    ).toLowerCase();
+
+
+  if (value === "approved")
+    return "status-success";
+
+
+  if (value === "rejected")
+    return "status-danger";
+
+
+  return "status-pending";
+
+}
+
+
+/*
+========================================
+SÉCURITÉ
+========================================
+*/
+
+function escapeHtml(
+  value
+) {
+
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+/*
+========================================
+DÉCONNEXION
+========================================
+*/
+
+if (logoutButton) {
+
+  logoutButton.addEventListener(
+    "click",
+    () => {
+
+      localStorage.removeItem(
+        "nosmyboost_token"
+      );
+
+      window.location.href =
+        "/login.html";
+
+    }
+  );
+
+}
+
+
+/*
+========================================
+DÉMARRAGE
+========================================
+*/
+
+async function initDeposit() {
+
+  await loadBalance();
+
+  await loadDepositHistory();
+
+}
+
+
+initDeposit();
