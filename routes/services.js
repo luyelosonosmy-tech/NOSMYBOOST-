@@ -3,157 +3,210 @@ const db = require("../database/database");
 
 const router = express.Router();
 
+const authenticateToken =
+  require("../middleware/auth");
+
+
 /*
 ========================================
-GET TOUS LES SERVICES ACTIFS
+NOSMYBOOST🇧🇪
+SERVICES
 ========================================
 */
 
-router.get("/", (req, res) => {
 
-  const sql = `
-    SELECT
-      id,
-      platform,
-      name,
-      description,
-      price,
-      min_quantity,
-      max_quantity
-    FROM services
-    WHERE active = 1
-    ORDER BY platform ASC, id ASC
-  `;
+/*
+========================================
+TOUS LES SERVICES
+========================================
+*/
 
-  db.all(sql, [], (err, services) => {
+router.get(
+  "/",
+  authenticateToken,
+  (req, res) => {
 
-    if (err) {
-      console.error("Erreur récupération services :", err);
+    const platform =
+      String(
+        req.query.platform || ""
+      )
+      .trim();
 
-      return res.status(500).json({
-        success: false,
-        message: "Impossible de récupérer les services."
-      });
+
+    let sql = `
+      SELECT
+        id,
+        platform,
+        name,
+        description,
+        price,
+        min_quantity,
+        max_quantity
+      FROM services
+      WHERE active = 1
+    `;
+
+
+    const params = [];
+
+
+    /*
+    ================================
+    FILTRE PLATEFORME
+    ================================
+    */
+
+    if (platform) {
+
+      sql += `
+        AND LOWER(platform) =
+        LOWER(?)
+      `;
+
+      params.push(platform);
+
     }
 
-    res.json({
-      success: true,
-      services
-    });
 
-  });
-
-});
+    sql += `
+      ORDER BY platform ASC, id ASC
+    `;
 
 
-/*
-========================================
-GET SERVICES PAR PLATEFORME
-========================================
-*/
+    db.all(
+      sql,
+      params,
+      (error, services) => {
 
-router.get("/platform/:platform", (req, res) => {
+        if (error) {
 
-  const platform = req.params.platform.trim();
+          console.error(
+            "Erreur services:",
+            error
+          );
 
-  const sql = `
-    SELECT
-      id,
-      platform,
-      name,
-      description,
-      price,
-      min_quantity,
-      max_quantity
-    FROM services
-    WHERE platform = ?
-      AND active = 1
-    ORDER BY id ASC
-  `;
+          return res.status(500).json({
 
-  db.all(sql, [platform], (err, services) => {
+            success: false,
 
-    if (err) {
-      console.error("Erreur récupération services :", err);
+            message:
+              "Impossible de récupérer les services."
 
-      return res.status(500).json({
-        success: false,
-        message: "Impossible de récupérer les services."
-      });
-    }
+          });
 
-    res.json({
-      success: true,
-      platform,
-      services
-    });
-
-  });
-
-});
+        }
 
 
-/*
-========================================
-GET UN SERVICE PAR SON ID
-========================================
-*/
+        res.json({
 
-router.get("/:id", (req, res) => {
+          success: true,
 
-  const serviceId = Number(req.params.id);
+          services
 
-  if (!Number.isInteger(serviceId) || serviceId <= 0) {
+        });
 
-    return res.status(400).json({
-      success: false,
-      message: "ID de service invalide."
-    });
+      }
+    );
 
   }
+);
 
-  const sql = `
-    SELECT
-      id,
-      platform,
-      name,
-      description,
-      price,
-      min_quantity,
-      max_quantity
-    FROM services
-    WHERE id = ?
-      AND active = 1
-  `;
 
-  db.get(sql, [serviceId], (err, service) => {
+/*
+========================================
+SERVICE PAR ID
+========================================
+*/
 
-    if (err) {
-      console.error("Erreur récupération service :", err);
+router.get(
+  "/:id",
+  authenticateToken,
+  (req, res) => {
 
-      return res.status(500).json({
+    const serviceId =
+      Number(req.params.id);
+
+
+    if (
+      !Number.isInteger(serviceId) ||
+      serviceId <= 0
+    ) {
+
+      return res.status(400).json({
+
         success: false,
-        message: "Impossible de récupérer le service."
+
+        message:
+          "ID de service invalide."
+
       });
+
     }
 
-    if (!service) {
 
-      return res.status(404).json({
-        success: false,
-        message: "Service introuvable."
-      });
+    db.get(
+      `
+      SELECT
+        id,
+        platform,
+        name,
+        description,
+        price,
+        min_quantity,
+        max_quantity
+      FROM services
+      WHERE id = ?
+        AND active = 1
+      `,
+      [serviceId],
+      (error, service) => {
 
-    }
+        if (error) {
 
-    res.json({
-      success: true,
-      service
-    });
+          console.error(
+            "Erreur service:",
+            error
+          );
 
-  });
+          return res.status(500).json({
 
-});
+            success: false,
+
+            message:
+              "Impossible de récupérer le service."
+
+          });
+
+        }
+
+
+        if (!service) {
+
+          return res.status(404).json({
+
+            success: false,
+
+            message:
+              "Service introuvable."
+
+          });
+
+        }
+
+
+        res.json({
+
+          success: true,
+
+          service
+
+        });
+
+      }
+    );
+
+  }
+);
 
 
 module.exports = router;
