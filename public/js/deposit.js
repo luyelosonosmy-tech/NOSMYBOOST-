@@ -1,332 +1,548 @@
-document.addEventListener("DOMContentLoaded", async () => {
+/*
+========================================
+NOSMYBOOST🇧🇪
+DÉPÔTS CLIENT
+========================================
+*/
 
-  const token = localStorage.getItem("nosmyboost_token");
+const TOKEN_KEY = "nosmyboost_token";
 
-  if (!token) {
-    window.location.href = "/login.html";
-    return;
-  }
-
-  const amountInput = document.getElementById("amount");
-  const proofInput = document.getElementById("proof");
-  const paymentMethods = document.getElementById("paymentMethods");
-  const depositButton = document.getElementById("depositButton");
-  const depositMessage = document.getElementById("depositMessage");
-  const depositHistory = document.getElementById("depositHistory");
-
-  let selectedMethod = null;
+const token =
+  localStorage.getItem(TOKEN_KEY);
 
 
-  /*
-  ========================================
-  CHARGER LES MOYENS DE PAIEMENT
-  ========================================
-  */
+/*
+========================================
+PROTECTION
+========================================
+*/
 
-  async function loadPaymentMethods() {
+if (!token) {
 
-    try {
+  window.location.href =
+    "/login.html";
 
-      const response = await fetch("/api/deposits/methods");
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-
-        paymentMethods.innerHTML =
-          "<p>Impossible de charger les moyens de paiement.</p>";
-
-        return;
-
-      }
-
-      paymentMethods.innerHTML = "";
-
-      data.methods.forEach((method) => {
-
-        const button = document.createElement("button");
-
-        button.type = "button";
-
-        button.textContent = method.name;
-
-        button.dataset.method = method.id;
-
-        button.addEventListener("click", () => {
-
-          selectedMethod = method.id;
-
-          document
-            .querySelectorAll("#paymentMethods button")
-            .forEach((item) => {
-              item.removeAttribute("data-selected");
-            });
-
-          button.setAttribute("data-selected", "true");
-
-        });
-
-        paymentMethods.appendChild(button);
-
-      });
-
-    } catch (error) {
-
-      console.error(error);
-
-      paymentMethods.innerHTML =
-        "<p>Erreur de connexion au serveur.</p>";
-
-    }
-
-  }
+}
 
 
-  /*
-  ========================================
-  ENVOYER UN DÉPÔT
-  ========================================
-  */
+/*
+========================================
+ÉTAT DU DÉPÔT
+========================================
+*/
 
-  depositButton.addEventListener("click", async () => {
+let selectedAmount = 0;
 
-    const amount = Number(amountInput.value);
-
-    const proof = proofInput.value.trim();
+let selectedMethod = "";
 
 
-    if (!Number.isFinite(amount) || amount <= 0) {
+/*
+========================================
+NUMÉROS DE PAIEMENT
+========================================
 
-      depositMessage.textContent =
-        "Veuillez entrer un montant valide.";
+⚠️ À REMPLACER PAR TES VRAIS NUMÉROS
+AVANT LA MISE EN PRODUCTION.
+*/
 
-      return;
+const PAYMENT_NUMBERS = {
 
-    }
+  airtel:
+    "À CONFIGURER",
 
+  mpesa:
+    "À CONFIGURER",
 
-    if (!selectedMethod) {
+  orange:
+    "À CONFIGURER"
 
-      depositMessage.textContent =
-        "Veuillez choisir un moyen de paiement.";
-
-      return;
-
-    }
-
-
-    if (!proof) {
-
-      depositMessage.textContent =
-        "Veuillez entrer la référence de paiement.";
-
-      return;
-
-    }
+};
 
 
-    depositButton.disabled = true;
+/*
+========================================
+NOMS DES MOYENS
+========================================
+*/
 
-    depositMessage.textContent =
-      "Envoi de la demande...";
+const PAYMENT_NAMES = {
+
+  airtel:
+    "Airtel Money",
+
+  mpesa:
+    "Vodacom M-Pesa",
+
+  orange:
+    "Orange Money"
+
+};
 
 
-    try {
+/*
+========================================
+CHOIX DU MONTANT
+========================================
+*/
 
-      const response = await fetch(
-        "/api/deposits",
-        {
-          method: "POST",
+document
+  .querySelectorAll(
+    ".amount-btn"
+  )
+  .forEach(button => {
 
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
+    button.addEventListener(
+      "click",
+      () => {
 
-          body: JSON.stringify({
-            amount,
-            method: selectedMethod,
-            proof
-          })
+        selectedAmount =
+          Number(
+            button.dataset.amount
+          );
+
+
+        const customAmount =
+          document.getElementById(
+            "customAmount"
+          );
+
+        const depositAmount =
+          document.getElementById(
+            "depositAmount"
+          );
+
+
+        if (customAmount) {
+
+          customAmount.value = "";
+
         }
-      );
 
 
-      const data = await response.json();
+        if (depositAmount) {
+
+          depositAmount.value =
+            selectedAmount;
+
+        }
 
 
-      if (response.status === 401) {
+        document
+          .querySelectorAll(
+            ".amount-btn"
+          )
+          .forEach(item => {
 
-        localStorage.removeItem("nosmyboost_token");
-        localStorage.removeItem("nosmyboost_user");
+            item.classList.remove(
+              "btn-primary"
+            );
 
-        window.location.href = "/login.html";
+            item.classList.add(
+              "btn-outline"
+            );
 
-        return;
+          });
+
+
+        button.classList.remove(
+          "btn-outline"
+        );
+
+        button.classList.add(
+          "btn-primary"
+        );
 
       }
-
-
-      if (!response.ok || !data.success) {
-
-        depositMessage.textContent =
-          data.message ||
-          "Impossible d'envoyer le dépôt.";
-
-        return;
-
-      }
-
-
-      depositMessage.textContent =
-        "Dépôt envoyé. En attente de validation par l'administrateur.";
-
-      amountInput.value = "";
-      proofInput.value = "";
-      selectedMethod = null;
-
-      document
-        .querySelectorAll("#paymentMethods button")
-        .forEach((button) => {
-          button.removeAttribute("data-selected");
-        });
-
-
-      await loadDepositHistory();
-
-
-    } catch (error) {
-
-      console.error(error);
-
-      depositMessage.textContent =
-        "Erreur de connexion au serveur.";
-
-    } finally {
-
-      depositButton.disabled = false;
-
-    }
+    );
 
   });
 
 
-  /*
-  ========================================
-  HISTORIQUE DES DÉPÔTS
-  ========================================
-  */
+/*
+========================================
+MONTANT PERSONNALISÉ
+========================================
+*/
 
-  async function loadDepositHistory() {
-
-    try {
-
-      const response = await fetch(
-        "/api/deposits/my",
-        {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        }
-      );
+const customAmount =
+  document.getElementById(
+    "customAmount"
+  );
 
 
-      const data = await response.json();
+if (customAmount) {
+
+  customAmount.addEventListener(
+    "input",
+    () => {
+
+      const value =
+        Number(
+          customAmount.value
+        );
 
 
-      if (response.status === 401) {
-
-        localStorage.removeItem("nosmyboost_token");
-        localStorage.removeItem("nosmyboost_user");
-
-        window.location.href = "/login.html";
-
-        return;
-
-      }
+      selectedAmount =
+        Number.isFinite(value)
+          ? value
+          : 0;
 
 
-      if (!response.ok || !data.success) {
-
-        depositHistory.innerHTML =
-          "<p>Impossible de charger l'historique.</p>";
-
-        return;
-
-      }
+      const depositAmount =
+        document.getElementById(
+          "depositAmount"
+        );
 
 
-      if (!data.deposits.length) {
+      if (depositAmount) {
 
-        depositHistory.innerHTML =
-          "<p>Aucun dépôt pour le moment.</p>";
-
-        return;
+        depositAmount.value =
+          selectedAmount || "";
 
       }
 
 
-      depositHistory.innerHTML = "";
+      document
+        .querySelectorAll(
+          ".amount-btn"
+        )
+        .forEach(item => {
 
+          item.classList.remove(
+            "btn-primary"
+          );
 
-      data.deposits.forEach((deposit) => {
+          item.classList.add(
+            "btn-outline"
+          );
 
-        const item = document.createElement("article");
-
-        const amount = document.createElement("strong");
-
-        amount.textContent =
-          `${Number(deposit.amount).toLocaleString("fr-FR")} CDF`;
-
-
-        const method = document.createElement("p");
-
-        method.textContent =
-          `Méthode : ${deposit.method}`;
-
-
-        const status = document.createElement("p");
-
-        status.textContent =
-          `Statut : ${deposit.status}`;
-
-
-        const date = document.createElement("small");
-
-        date.textContent =
-          deposit.created_at;
-
-
-        item.appendChild(amount);
-        item.appendChild(method);
-        item.appendChild(status);
-        item.appendChild(date);
-
-        depositHistory.appendChild(item);
-
-      });
-
-
-    } catch (error) {
-
-      console.error(error);
-
-      depositHistory.innerHTML =
-        "<p>Erreur de connexion au serveur.</p>";
+        });
 
     }
+  );
 
-  }
+}
 
 
-  /*
-  ========================================
-  INITIALISATION
-  ========================================
-  */
+/*
+========================================
+CHOIX DU MOYEN DE PAIEMENT
+========================================
+*/
 
-  await loadPaymentMethods();
+document
+  .querySelectorAll(
+    ".payment-method"
+  )
+  .forEach(button => {
 
-  await loadDepositHistory();
+    button.addEventListener(
+      "click",
+      () => {
 
-});
+        selectedMethod =
+          button.dataset.method;
+
+
+        const instructions =
+          document.getElementById(
+            "paymentInstructions"
+          );
+
+        const text =
+          document.getElementById(
+            "selectedPaymentText"
+          );
+
+        const number =
+          document.getElementById(
+            "paymentNumber"
+          );
+
+
+        /*
+        ================================
+        STYLE SÉLECTION
+        ================================
+        */
+
+        document
+          .querySelectorAll(
+            ".payment-method"
+          )
+          .forEach(item => {
+
+            item.style.borderColor =
+              "#e7ebf1";
+
+          });
+
+
+        button.style.borderColor =
+          "#111827";
+
+
+        /*
+        ================================
+        AFFICHAGE INSTRUCTIONS
+        ================================
+        */
+
+        if (instructions) {
+
+          instructions.style.display =
+            "block";
+
+        }
+
+
+        if (text) {
+
+          text.textContent =
+            `Vous avez choisi ${PAYMENT_NAMES[selectedMethod]}. Effectuez le paiement avec le numéro ci-dessous.`;
+
+        }
+
+
+        if (number) {
+
+          number.textContent =
+            PAYMENT_NUMBERS[
+              selectedMethod
+            ] ||
+            "À configurer";
+
+        }
+
+      }
+    );
+
+  });
+
+
+/*
+========================================
+ENVOI DU DÉPÔT
+========================================
+*/
+
+const depositForm =
+  document.getElementById(
+    "depositForm"
+  );
+
+
+if (depositForm) {
+
+  depositForm.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      const message =
+        document.getElementById(
+          "depositMessage"
+        );
+
+      const button =
+        document.getElementById(
+          "depositButton"
+        );
+
+      const proof =
+        document.getElementById(
+          "proof"
+        ).value
+        .trim();
+
+
+      /*
+      ================================
+      VALIDATION
+      ================================
+      */
+
+      if (
+        !selectedAmount ||
+        selectedAmount < 1000
+      ) {
+
+        message.textContent =
+          "Le montant minimum est de 1 000 CDF.";
+
+        return;
+
+      }
+
+
+      if (!selectedMethod) {
+
+        message.textContent =
+          "Choisissez un moyen de paiement.";
+
+        return;
+
+      }
+
+
+      if (!proof) {
+
+        message.textContent =
+          "Veuillez fournir la référence ou la preuve du paiement.";
+
+        return;
+
+      }
+
+
+      /*
+      ================================
+      CHARGEMENT
+      ================================
+      */
+
+      button.disabled = true;
+
+      button.textContent =
+        "Envoi en cours...";
+
+      message.textContent = "";
+
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/deposits",
+            {
+
+              method: "POST",
+
+              headers: {
+
+                "Content-Type":
+                  "application/json",
+
+                "Authorization":
+                  `Bearer ${token}`
+
+              },
+
+              body:
+                JSON.stringify({
+
+                  amount:
+                    selectedAmount,
+
+                  method:
+                    selectedMethod,
+
+                  proof
+
+                })
+
+            }
+          );
+
+
+        const data =
+          await response.json();
+
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+
+          message.textContent =
+            data.message ||
+            "Impossible d'envoyer la demande.";
+
+          return;
+
+        }
+
+
+        /*
+        ================================
+        SUCCÈS
+        ================================
+        */
+
+        message.textContent =
+          "Demande envoyée avec succès. Votre dépôt est en attente de validation par l'administrateur.";
+
+
+        depositForm.reset();
+
+
+        selectedAmount = 0;
+
+        selectedMethod = "";
+
+
+        const instructions =
+          document.getElementById(
+            "paymentInstructions"
+          );
+
+
+        if (instructions) {
+
+          instructions.style.display =
+            "none";
+
+        }
+
+
+        document
+          .querySelectorAll(
+            ".amount-btn"
+          )
+          .forEach(item => {
+
+            item.classList.remove(
+              "btn-primary"
+            );
+
+            item.classList.add(
+              "btn-outline"
+            );
+
+          });
+
+
+        document
+          .querySelectorAll(
+            ".payment-method"
+          )
+          .forEach(item => {
+
+            item.style.borderColor =
+              "#e7ebf1";
+
+          });
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        message.textContent =
+          "Impossible de contacter le serveur.";
+
+      } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+          "Envoyer la demande";
+
+      }
+
+    }
+  );
+
+          }
