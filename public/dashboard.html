@@ -12,211 +12,546 @@
 
   <title>Dashboard — NOSMYBOOST🇧🇪</title>
 
-  <meta
-    name="description"
-    content="Tableau de bord NOSMYBOOST🇧🇪"
+  <link
+    rel="stylesheet"
+    href="/css/style.css"
   >
 
 </head>
 
 <body>
 
-  <header>
+  <!-- ================================
+       NAVBAR
+  ================================= -->
 
-    <h1>NOSMYBOOST🇧🇪</h1>
+  <header class="navbar">
 
-    <div>
-      <span id="userName">Bienvenue</span>
+    <div class="container nav-content">
 
-      <button
-        id="logoutButton"
-        type="button"
+      <a
+        href="/dashboard.html"
+        class="logo"
       >
-        Déconnexion
-      </button>
+        NOSMYBOOST🇧🇪
+      </a>
+
+
+      <div class="nav-actions">
+
+        <span
+          id="userName"
+          style="font-weight:700;"
+        >
+          Client
+        </span>
+
+
+        <button
+          id="logoutButton"
+          type="button"
+          class="btn btn-outline"
+        >
+          Déconnexion
+        </button>
+
+      </div>
+
     </div>
 
   </header>
 
 
+  <!-- ================================
+       DASHBOARD
+  ================================= -->
+
   <main>
 
-    <!-- ================================
-         SOLDE
-    ================================= -->
+    <section class="features">
 
-    <section>
+      <div class="container">
 
-      <h2>Bienvenue</h2>
 
-      <p id="welcomeUser">
-        Chargement...
-      </p>
+        <!-- BIENVENUE -->
 
-      <div>
+        <div
+          style="
+            margin-bottom:30px;
+          "
+        >
 
-        <h3>Solde actuel</h3>
+          <span class="badge">
+            NOSMYBOOST🇧🇪
+          </span>
 
-        <strong id="balance">
-          0 CDF
-        </strong>
+          <h1>
+            Bienvenue,
+            <span id="welcomeName">
+              Client
+            </span>
+          </h1>
 
-      </div>
+          <p
+            style="
+              color:#667085;
+              margin-top:8px;
+            "
+          >
+            Gérez votre solde et vos commandes
+            depuis votre espace.
+          </p>
 
-      <div>
+        </div>
 
-        <h3>Total déposé</h3>
 
-        <strong id="totalDeposited">
-          0 CDF
-        </strong>
+        <!-- ==============================
+             STATISTIQUES
+        =============================== -->
 
-      </div>
+        <div
+          class="feature-grid"
+          style="
+            grid-template-columns:
+            repeat(4, 1fr);
+            margin-bottom:30px;
+          "
+        >
 
-      <div>
+          <!-- SOLDE -->
 
-        <h3>Total dépensé</h3>
+          <article class="feature-card">
 
-        <strong id="totalSpent">
-          0 CDF
-        </strong>
+            <p
+              style="
+                color:#667085;
+                font-size:13px;
+              "
+            >
+              Solde actuel
+            </p>
 
-      </div>
+            <h2
+              id="balance"
+              style="
+                margin-top:8px;
+              "
+            >
+              0 CDF
+            </h2>
 
-      <div>
+          </article>
 
-        <h3>Nombre de commandes</h3>
 
-        <strong id="orderCount">
-          0
-        </strong>
+          <!-- DÉPOSÉ -->
+
+          <article class="feature-card">
+
+            <p
+              style="
+                color:#667085;
+                font-size:13px;
+              "
+            >
+              Total déposé
+            </p>
+
+            <h2
+              id="totalDeposited"
+              style="
+                margin-top:8px;
+              "
+            >
+              0 CDF
+            </h2>
+
+          </article>
+
+
+          <!-- DÉPENSÉ -->
+
+          <article class="feature-card">
+
+            <p
+              style="
+                color:#667085;
+                font-size:13px;
+              "
+            >
+              Total dépensé
+            </p>
+
+            <h2
+              id="totalSpent"
+              style="
+                margin-top:8px;
+              "
+            >
+              0 CDF
+            </h2>
+
+          </article>
+
+
+          <!-- COMMANDES -->
+
+          <article class="feature-card">
+
+            <p
+              style="
+                color:#667085;
+                font-size:13px;
+              "
+            >
+              Commandes
+            </p>
+
+            <h2
+              id="ordersCount"
+              style="
+                margin-top:8px;
+              "
+            >
+              0
+            </h2>
+
+          </article>
+
+        </div>
+
+
+        <!-- ==============================
+             ACTIONS
+        =============================== -->
+
+        <div
+          class="feature-grid"
+          style="
+            grid-template-columns:
+            repeat(3, 1fr);
+            margin-bottom:45px;
+          "
+        >
+
+          <a
+            href="/deposit.html"
+            class="feature-card"
+          >
+
+            <div class="feature-icon">
+              💳
+            </div>
+
+            <h3>
+              Recharger le solde
+            </h3>
+
+            <p>
+              Airtel Money, Vodacom M-Pesa
+              et Orange Money.
+            </p>
+
+          </a>
+
+
+          <a
+            href="#services"
+            class="feature-card"
+          >
+
+            <div class="feature-icon">
+              🚀
+            </div>
+
+            <h3>
+              Nouvelle commande
+            </h3>
+
+            <p>
+              Choisissez un service et
+              lancez votre commande.
+            </p>
+
+          </a>
+
+
+          <a
+            href="#orders"
+            class="feature-card"
+          >
+
+            <div class="feature-icon">
+              📋
+            </div>
+
+            <h3>
+              Mes commandes
+            </h3>
+
+            <p>
+              Consultez l'historique de
+              vos commandes.
+            </p>
+
+          </a>
+
+        </div>
+
+
+        <!-- ==============================
+             SERVICES
+        =============================== -->
+
+        <section id="services">
+
+          <div class="section-title">
+
+            <span>
+              SERVICES
+            </span>
+
+            <h2>
+              Choisissez votre plateforme
+            </h2>
+
+            <p>
+              Cliquez sur une plateforme pour
+              voir les services disponibles.
+            </p>
+
+          </div>
+
+
+          <div
+            id="platformGrid"
+            class="platform-grid"
+          >
+
+            <button
+              class="platform-card"
+              data-platform="Instagram"
+              type="button"
+            >
+              📸
+              <strong>Instagram</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="Facebook"
+              type="button"
+            >
+              👍
+              <strong>Facebook</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="TikTok"
+              type="button"
+            >
+              🎵
+              <strong>TikTok</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="YouTube"
+              type="button"
+            >
+              ▶️
+              <strong>YouTube</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="Telegram"
+              type="button"
+            >
+              ✈️
+              <strong>Telegram</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="X"
+              type="button"
+            >
+              𝕏
+              <strong>X</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="Snapchat"
+              type="button"
+            >
+              👻
+              <strong>Snapchat</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="WhatsApp"
+              type="button"
+            >
+              💬
+              <strong>WhatsApp</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="Spotify"
+              type="button"
+            >
+              🎧
+              <strong>Spotify</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="LinkedIn"
+              type="button"
+            >
+              💼
+              <strong>LinkedIn</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="Discord"
+              type="button"
+            >
+              🎮
+              <strong>Discord</strong>
+            </button>
+
+
+            <button
+              class="platform-card"
+              data-platform="Website"
+              type="button"
+            >
+              🌐
+              <strong>Site Web</strong>
+            </button>
+
+          </div>
+
+        </section>
+
+
+        <!-- ==============================
+             SERVICES RÉSULTATS
+        =============================== -->
+
+        <section
+          id="serviceResults"
+          style="
+            margin-top:45px;
+          "
+        >
+
+          <div class="section-title">
+
+            <span>
+              SERVICES DISPONIBLES
+            </span>
+
+            <h2 id="selectedPlatform">
+              Sélectionnez une plateforme
+            </h2>
+
+          </div>
+
+
+          <div
+            id="servicesList"
+            class="feature-grid"
+          >
+
+            <p
+              style="
+                grid-column:1/-1;
+                text-align:center;
+                color:#667085;
+              "
+            >
+              Sélectionnez une plateforme
+              ci-dessus.
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <!-- ==============================
+             COMMANDES
+        =============================== -->
+
+        <section
+          id="orders"
+          style="
+            margin-top:70px;
+          "
+        >
+
+          <div class="section-title">
+
+            <span>
+              HISTORIQUE
+            </span>
+
+            <h2>
+              Mes dernières commandes
+            </h2>
+
+          </div>
+
+
+          <div
+            id="ordersList"
+            class="feature-grid"
+          >
+
+            <p
+              style="
+                grid-column:1/-1;
+                text-align:center;
+                color:#667085;
+              "
+            >
+              Chargement des commandes...
+            </p>
+
+          </div>
+
+        </section>
 
       </div>
 
     </section>
-
-
-    <!-- ================================
-         ACTIONS
-    ================================= -->
-
-    <section>
-
-      <h2>Actions rapides</h2>
-
-      <a href="/deposit.html">
-        Recharger le solde
-      </a>
-
-      <a href="/order.html">
-        Nouvelle commande
-      </a>
-
-      <a href="/orders.html">
-        Mes commandes
-      </a>
-
-    </section>
-
-
-    <!-- ================================
-         PLATEFORMES
-    ================================= -->
-
-    <section>
-
-      <h2>Choisissez votre plateforme</h2>
-
-      <p>
-        Cliquez sur une plateforme pour voir les services disponibles.
-      </p>
-
-
-      <div id="platforms">
-
-        <button data-platform="Instagram">
-          Instagram
-        </button>
-
-        <button data-platform="Facebook">
-          Facebook
-        </button>
-
-        <button data-platform="TikTok">
-          TikTok
-        </button>
-
-        <button data-platform="YouTube">
-          YouTube
-        </button>
-
-        <button data-platform="Telegram">
-          Telegram
-        </button>
-
-        <button data-platform="X">
-          X
-        </button>
-
-        <button data-platform="Snapchat">
-          Snapchat
-        </button>
-
-        <button data-platform="WhatsApp">
-          WhatsApp
-        </button>
-
-        <button data-platform="Spotify">
-          Spotify
-        </button>
-
-        <button data-platform="LinkedIn">
-          LinkedIn
-        </button>
-
-        <button data-platform="Discord">
-          Discord
-        </button>
-
-        <button data-platform="Site Web">
-          Site Web
-        </button>
-
-      </div>
-
-    </section>
-
-
-    <!-- ================================
-         SERVICES
-    ================================= -->
-
-    <section>
-
-      <h2>Services disponibles</h2>
-
-      <div id="services">
-
-        <p>
-          Sélectionnez une plateforme.
-        </p>
-
-      </div>
-
-    </section>
-
-
-    <!-- ================================
-         MESSAGE
-    ================================= -->
-
-    <p id="dashboardMessage"></p>
 
   </main>
 
+
+  <!-- ================================
+       JAVASCRIPT
+  ================================= -->
 
   <script src="/js/dashboard.js"></script>
 
 </body>
 
-</html>
+  </html>
