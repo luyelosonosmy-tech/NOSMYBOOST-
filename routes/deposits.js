@@ -1,183 +1,281 @@
 const express = require("express");
 const db = require("../database/database");
-const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
 
-/*
-========================================
-MOYENS DE PAIEMENT
-========================================
-*/
-
-const PAYMENT_METHODS = {
-  airtel: {
-    name: "Airtel Money",
-    currency: "CDF",
-    number: ""
-  },
-
-  mpesa: {
-    name: "Vodacom M-Pesa",
-    currency: "CDF",
-    number: ""
-  },
-
-  orange: {
-    name: "Orange Money",
-    currency: "CDF",
-    number: ""
-  }
-};
+const authenticateToken =
+  require("../middleware/auth");
 
 
 /*
 ========================================
-AFFICHER LES MOYENS DE PAIEMENT
-========================================
-*/
-
-router.get("/methods", (req, res) => {
-
-  const methods = Object.entries(PAYMENT_METHODS).map(
-    ([id, method]) => ({
-      id,
-      name: method.name,
-      currency: method.currency
-    })
-  );
-
-  res.json({
-    success: true,
-    methods
-  });
-
-});
-
-
-/*
-========================================
+NOSMYBOOST🇧🇪
 CRÉER UNE DEMANDE DE DÉPÔT
 ========================================
 */
 
-router.post("/", authenticateToken, (req, res) => {
+router.post(
+  "/",
+  authenticateToken,
+  (req, res) => {
 
-  const {
-    amount,
-    method,
-    proof
-  } = req.body;
+    const userId =
+      Number(req.user.id);
 
-  const numericAmount = Number(amount);
+    const amount =
+      Number(req.body.amount);
 
-  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    const method =
+      String(
+        req.body.method || ""
+      )
+      .trim()
+      .toLowerCase();
 
-    return res.status(400).json({
-      success: false,
-      message: "Montant de dépôt invalide."
-    });
+    const proof =
+      String(
+        req.body.proof || ""
+      )
+      .trim();
 
-  }
 
-  if (!PAYMENT_METHODS[method]) {
+    /*
+    ====================================
+    VALIDATION UTILISATEUR
+    ====================================
+    */
 
-    return res.status(400).json({
-      success: false,
-      message: "Méthode de paiement invalide."
-    });
+    if (
+      !Number.isInteger(userId) ||
+      userId <= 0
+    ) {
 
-  }
-
-  if (!proof || !String(proof).trim()) {
-
-    return res.status(400).json({
-      success: false,
-      message: "La preuve de paiement est obligatoire."
-    });
-
-  }
-
-  db.run(
-    `
-    INSERT INTO deposits
-    (user_id, amount, method, proof, status)
-    VALUES (?, ?, ?, ?, 'pending')
-    `,
-    [
-      req.user.id,
-      numericAmount,
-      method,
-      String(proof).trim()
-    ],
-    function (err) {
-
-      if (err) {
-
-        console.error("Erreur création dépôt :", err);
-
-        return res.status(500).json({
-          success: false,
-          message: "Impossible d'enregistrer le dépôt."
-        });
-
-      }
-
-      res.status(201).json({
-        success: true,
-        message: "Demande de dépôt envoyée. Elle est en attente de validation.",
-        depositId: this.lastID
+      return res.status(401).json({
+        success: false,
+        message:
+          "Session utilisateur invalide."
       });
 
     }
-  );
 
-});
+
+    /*
+    ====================================
+    VALIDATION MONTANT
+    ====================================
+    */
+
+    if (
+      !Number.isFinite(amount) ||
+      amount < 1000
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Le montant minimum est de 1 000 CDF."
+      });
+
+    }
+
+
+    /*
+    ====================================
+    MOYEN DE PAIEMENT
+    ====================================
+    */
+
+    const allowedMethods = [
+      "airtel",
+      "mpesa",
+      "orange"
+    ];
+
+
+    if (
+      !allowedMethods.includes(
+        method
+      )
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Moyen de paiement invalide."
+      });
+
+    }
+
+
+    /*
+    ====================================
+    PREUVE
+    ====================================
+    */
+
+    if (
+      proof.length < 3
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Veuillez fournir la référence ou la preuve du paiement."
+      });
+
+    }
+
+
+    /*
+    ====================================
+    CRÉATION DU DÉPÔT
+    ====================================
+    */
+
+    db.run(
+      `
+      INSERT INTO deposits
+      (
+        user_id,
+        amount,
+        method,
+        proof,
+        status
+      )
+
+      VALUES
+      (
+        ?,
+        ?,
+        ?,
+        ?,
+        'pending'
+      )
+      `,
+      [
+        userId,
+        amount,
+        method,
+        proof
+      ],
+      function (error) {
+
+        if (error) {
+
+          console.error(
+            "Erreur création dépôt:",
+            error
+          );
+
+          return res.status(500).json({
+            success: false,
+            message:
+              "Impossible d'enregistrer la demande de dépôt."
+          });
+
+        }
+
+
+        /*
+        ================================
+        SUCCÈS
+        ================================
+        */
+
+        return res.status(201).json({
+
+          success: true,
+
+          message:
+            "Demande de dépôt envoyée. Elle est en attente de validation.",
+
+          deposit: {
+
+            id: this.lastID,
+
+            user_id: userId,
+
+            amount,
+
+            method,
+
+            status:
+              "pending"
+
+          }
+
+        });
+
+      }
+    );
+
+  }
+);
 
 
 /*
 ========================================
-HISTORIQUE DES DÉPÔTS DU CLIENT
+MES DÉPÔTS
 ========================================
 */
 
-router.get("/my", authenticateToken, (req, res) => {
+router.get(
+  "/my",
+  authenticateToken,
+  (req, res) => {
 
-  db.all(
-    `
-    SELECT
-      id,
-      amount,
-      method,
-      status,
-      created_at
-    FROM deposits
-    WHERE user_id = ?
-    ORDER BY id DESC
-    `,
-    [req.user.id],
-    (err, deposits) => {
+    const userId =
+      Number(req.user.id);
 
-      if (err) {
 
-        console.error("Erreur historique dépôts :", err);
+    db.all(
+      `
+      SELECT
+        id,
+        amount,
+        method,
+        proof,
+        status,
+        created_at
 
-        return res.status(500).json({
-          success: false,
-          message: "Impossible de récupérer l'historique."
+      FROM deposits
+
+      WHERE user_id = ?
+
+      ORDER BY id DESC
+      `,
+      [userId],
+      (error, deposits) => {
+
+        if (error) {
+
+          console.error(
+            "Erreur récupération dépôts:",
+            error
+          );
+
+          return res.status(500).json({
+            success: false,
+            message:
+              "Impossible de récupérer vos dépôts."
+          });
+
+        }
+
+
+        res.json({
+
+          success: true,
+
+          deposits
+
         });
 
       }
+    );
 
-      res.json({
-        success: true,
-        deposits
-      });
-
-    }
-  );
-
-});
+  }
+);
 
 
 module.exports = router;
