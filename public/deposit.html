@@ -22,9 +22,9 @@
 
 <body>
 
-  <!-- ================================
-       NAVBAR
-  ================================= -->
+  <!-- =================================
+       NAVIGATION
+  ================================== -->
 
   <header class="navbar">
 
@@ -37,30 +37,47 @@
         NOSMYBOOST🇧🇪
       </a>
 
-      <a
-        href="/dashboard.html"
+
+      <nav class="dashboard-nav">
+
+        <a href="/dashboard.html">
+          Accueil
+        </a>
+
+        <a href="/deposit.html">
+          Recharger
+        </a>
+
+        <a href="/orders.html">
+          Commandes
+        </a>
+
+      </nav>
+
+
+      <button
+        id="logoutButton"
+        type="button"
         class="btn btn-outline"
       >
-        ← Dashboard
-      </a>
+        Déconnexion
+      </button>
 
     </div>
 
   </header>
 
 
-  <!-- ================================
+  <!-- =================================
        DÉPÔT
-  ================================= -->
+  ================================== -->
 
   <main>
 
-    <section class="features">
+    <section class="deposit-section">
 
-      <div
-        class="container"
-        style="max-width:900px;"
-      >
+      <div class="container">
+
 
         <div class="section-title">
 
@@ -74,370 +91,231 @@
 
           <p>
             Choisissez votre moyen de paiement,
-            effectuez le paiement puis envoyez
-            votre preuve.
+            effectuez le transfert puis envoyez
+            votre demande de confirmation.
           </p>
 
         </div>
 
 
-        <!-- ==============================
-             MONTANT
-        =============================== -->
+        <!-- =================================
+             SOLDE ACTUEL
+        ================================== -->
 
-        <div
-          class="feature-card"
-          style="margin-bottom:20px;"
-        >
+        <div class="balance-box deposit-balance">
 
-          <h3>
-            1. Choisissez le montant
-          </h3>
+          <span>
+            Votre solde actuel
+          </span>
 
-          <div
-            id="amountGrid"
-            style="
-              display:grid;
-              grid-template-columns:
-              repeat(auto-fit,minmax(120px,1fr));
-              gap:12px;
-              margin-top:20px;
-            "
-          >
-
-            <button
-              type="button"
-              class="btn btn-outline amount-btn"
-              data-amount="1000"
-            >
-              1 000 CDF
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-outline amount-btn"
-              data-amount="2000"
-            >
-              2 000 CDF
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-outline amount-btn"
-              data-amount="5000"
-            >
-              5 000 CDF
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-outline amount-btn"
-              data-amount="10000"
-            >
-              10 000 CDF
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-outline amount-btn"
-              data-amount="20000"
-            >
-              20 000 CDF
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-outline amount-btn"
-              data-amount="50000"
-            >
-              50 000 CDF
-            </button>
-
-          </div>
-
-
-          <div style="margin-top:18px;">
-
-            <label for="customAmount">
-              Ou entrez un montant
-            </label>
-
-            <input
-              id="customAmount"
-              type="number"
-              min="1000"
-              step="1"
-              placeholder="Ex: 15000"
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
-            >
-
-          </div>
+          <strong id="currentBalance">
+            Chargement...
+          </strong>
 
         </div>
 
 
-        <!-- ==============================
-             MOYENS DE PAIEMENT
-        =============================== -->
+        <!-- =================================
+             FORMULAIRE DÉPÔT
+        ================================== -->
 
-        <div
-          class="feature-card"
-          style="margin-bottom:20px;"
-        >
-
-          <h3>
-            2. Choisissez le moyen de paiement
-          </h3>
+        <div class="deposit-card">
 
 
-          <div
-            id="paymentMethods"
-            style="
-              display:grid;
-              grid-template-columns:
-              repeat(3,1fr);
-              gap:14px;
-              margin-top:20px;
-            "
-          >
-
-            <!-- AIRTEL -->
-
-            <button
-              type="button"
-              class="feature-card payment-method"
-              data-method="airtel"
-              style="text-align:left;cursor:pointer;"
-            >
-
-              <div class="feature-icon">
-                📱
-              </div>
-
-              <h3>
-                Airtel Money
-              </h3>
-
-              <p>
-                Paiement par Airtel Money.
-              </p>
-
-            </button>
+          <h2>
+            Effectuer un dépôt
+          </h2>
 
 
-            <!-- VODACOM -->
+          <p class="deposit-info">
 
-            <button
-              type="button"
-              class="feature-card payment-method"
-              data-method="mpesa"
-              style="text-align:left;cursor:pointer;"
-            >
+            Après votre paiement, envoyez les
+            informations demandées afin qu'un
+            administrateur puisse confirmer votre
+            dépôt.
 
-              <div class="feature-icon">
-                💳
-              </div>
-
-              <h3>
-                Vodacom M-Pesa
-              </h3>
-
-              <p>
-                Paiement par M-Pesa.
-              </p>
-
-            </button>
-
-
-            <!-- ORANGE -->
-
-            <button
-              type="button"
-              class="feature-card payment-method"
-              data-method="orange"
-              style="text-align:left;cursor:pointer;"
-            >
-
-              <div class="feature-icon">
-                🟠
-              </div>
-
-              <h3>
-                Orange Money
-              </h3>
-
-              <p>
-                Paiement par Orange Money.
-              </p>
-
-            </button>
-
-          </div>
-
-        </div>
-
-
-        <!-- ==============================
-             INSTRUCTIONS
-        =============================== -->
-
-        <div
-          id="paymentInstructions"
-          class="feature-card"
-          style="
-            margin-bottom:20px;
-            display:none;
-          "
-        >
-
-          <h3>
-            3. Effectuez le paiement
-          </h3>
-
-          <p
-            id="selectedPaymentText"
-            style="
-              margin-top:10px;
-              color:#667085;
-            "
-          ></p>
-
-
-          <div
-            style="
-              margin-top:18px;
-              padding:18px;
-              border-radius:14px;
-              background:#f7f9fc;
-            "
-          >
-
-            <p>
-              Numéro de paiement
-            </p>
-
-            <strong
-              id="paymentNumber"
-              style="
-                display:block;
-                margin-top:5px;
-                font-size:24px;
-              "
-            >
-              À configurer
-            </strong>
-
-          </div>
-
-
-          <p
-            style="
-              margin-top:18px;
-              color:#667085;
-              font-size:14px;
-            "
-          >
-            Après avoir effectué le paiement,
-            gardez votre preuve de transaction.
           </p>
 
-        </div>
 
+          <!-- MONTANT -->
 
-        <!-- ==============================
-             PREUVE
-        =============================== -->
+          <div class="form-group">
 
-        <form
-          id="depositForm"
-          class="feature-card"
-        >
-
-          <h3>
-            4. Envoyer la demande de dépôt
-          </h3>
-
-
-          <div style="margin-top:20px;">
-
-            <label for="depositAmount">
+            <label for="amount">
               Montant
             </label>
 
             <input
-              id="depositAmount"
               type="number"
-              min="1000"
+              id="amount"
+              name="amount"
+              min="1"
+              step="1"
+              placeholder="Ex. 5000"
               required
-              readonly
-              placeholder="Choisissez un montant"
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
             >
+
+            <small>
+              Montant en CDF.
+            </small>
 
           </div>
 
 
-          <div style="margin-top:18px;">
+          <!-- =================================
+               MÉTHODE
+          ================================== -->
+
+          <div class="form-group">
+
+            <label for="method">
+              Moyen de paiement
+            </label>
+
+            <select
+              id="method"
+              name="method"
+              required
+            >
+
+              <option
+                value=""
+                selected
+                disabled
+              >
+                Choisissez un moyen de paiement
+              </option>
+
+
+              <option value="airtel">
+                🔴 Airtel Money
+              </option>
+
+
+              <option value="mpesa">
+                🟢 Vodacom M-Pesa
+              </option>
+
+
+              <option value="orange">
+                🟠 Orange Money
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- =================================
+               INFORMATIONS PAIEMENT
+          ================================== -->
+
+          <div
+            id="paymentInstructions"
+            class="payment-instructions"
+          >
+
+            <p>
+              Choisissez un moyen de paiement
+              pour voir les instructions.
+            </p>
+
+          </div>
+
+
+          <!-- =================================
+               PREUVE
+          ================================== -->
+
+          <div class="form-group">
 
             <label for="proof">
               Référence / preuve du paiement
             </label>
 
-            <textarea
+            <input
+              type="text"
               id="proof"
-              rows="5"
+              name="proof"
+              placeholder="Ex. ID de transaction"
+              maxlength="200"
               required
-              placeholder="Entrez la référence de transaction ou expliquez votre paiement..."
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-                resize:vertical;
-              "
-            ></textarea>
+            >
+
+            <small>
+              Indiquez la référence visible après
+              votre paiement.
+            </small>
+
+          </div>
+
+
+          <!-- =================================
+               MESSAGE
+          ================================== -->
+
+          <div
+            id="depositMessage"
+            aria-live="polite"
+          ></div>
+
+
+          <!-- =================================
+               BOUTON
+          ================================== -->
+
+          <button
+            type="submit"
+            id="depositButton"
+            class="btn btn-primary"
+          >
+            Envoyer la demande
+          </button>
+
+
+        </div>
+
+
+        <!-- =================================
+             HISTORIQUE
+        ================================== -->
+
+        <section class="deposit-history">
+
+          <div class="section-title">
+
+            <span>
+              HISTORIQUE
+            </span>
+
+            <h2>
+              Mes dépôts
+            </h2>
 
           </div>
 
 
           <div
-            id="depositMessage"
-            style="
-              margin-top:18px;
-              font-size:14px;
-            "
-          ></div>
-
-
-          <button
-            id="depositButton"
-            type="submit"
-            class="btn btn-primary btn-large"
-            style="
-              width:100%;
-              margin-top:18px;
-            "
+            id="depositHistory"
+            class="orders-list"
           >
-            Envoyer la demande
-          </button>
 
-        </form>
+            <div class="empty-state">
+
+              <span>
+                💳
+              </span>
+
+              <p>
+                Aucun dépôt pour le moment.
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
 
       </div>
 
@@ -450,4 +328,4 @@
 
 </body>
 
-    </html>
+</html>
