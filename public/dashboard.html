@@ -19,11 +19,12 @@
 
 </head>
 
+
 <body>
 
-  <!-- ================================
-       NAVBAR
-  ================================= -->
+  <!-- =================================
+       NAVIGATION
+  ================================== -->
 
   <header class="navbar">
 
@@ -37,13 +38,30 @@
       </a>
 
 
+      <nav class="dashboard-nav">
+
+        <a href="/dashboard.html">
+          Accueil
+        </a>
+
+        <a href="/deposit.html">
+          Recharger
+        </a>
+
+        <a href="/orders.html">
+          Commandes
+        </a>
+
+      </nav>
+
+
       <div class="nav-actions">
 
         <span
           id="userName"
-          style="font-weight:700;"
+          class="user-name"
         >
-          Client
+          Chargement...
         </span>
 
 
@@ -62,247 +80,218 @@
   </header>
 
 
-  <!-- ================================
+  <!-- =================================
        DASHBOARD
-  ================================= -->
+  ================================== -->
 
   <main>
 
-    <section class="features">
+    <section class="dashboard-section">
 
       <div class="container">
 
 
-        <!-- BIENVENUE -->
+        <!-- =================================
+             BIENVENUE
+        ================================== -->
 
-        <div
-          style="
-            margin-bottom:30px;
-          "
-        >
+        <div class="dashboard-welcome">
 
-          <span class="badge">
-            NOSMYBOOST🇧🇪
-          </span>
+          <div>
 
-          <h1>
-            Bienvenue,
-            <span id="welcomeName">
-              Client
+            <span class="eyebrow">
+              NOSMYBOOST🇧🇪
             </span>
-          </h1>
 
-          <p
-            style="
-              color:#667085;
-              margin-top:8px;
-            "
-          >
-            Gérez votre solde et vos commandes
-            depuis votre espace.
-          </p>
+            <h1>
+              Bienvenue
+              <span id="welcomeName">
+                👋
+              </span>
+            </h1>
 
-        </div>
+            <p>
+              Votre panneau SMM pour développer
+              votre présence sur les réseaux sociaux.
+            </p>
+
+          </div>
 
 
-        <!-- ==============================
-             STATISTIQUES
-        =============================== -->
+          <div class="balance-box">
 
-        <div
-          class="feature-grid"
-          style="
-            grid-template-columns:
-            repeat(4, 1fr);
-            margin-bottom:30px;
-          "
-        >
-
-          <!-- SOLDE -->
-
-          <article class="feature-card">
-
-            <p
-              style="
-                color:#667085;
-                font-size:13px;
-              "
-            >
+            <span>
               Solde actuel
-            </p>
+            </span>
 
-            <h2
-              id="balance"
-              style="
-                margin-top:8px;
-              "
-            >
+            <strong id="balance">
               0 CDF
-            </h2>
+            </strong>
 
-          </article>
-
-
-          <!-- DÉPOSÉ -->
-
-          <article class="feature-card">
-
-            <p
-              style="
-                color:#667085;
-                font-size:13px;
-              "
+            <a
+              href="/deposit.html"
+              class="btn btn-primary"
             >
-              Total déposé
-            </p>
+              Recharger
+            </a>
 
-            <h2
-              id="totalDeposited"
-              style="
-                margin-top:8px;
-              "
-            >
-              0 CDF
-            </h2>
-
-          </article>
-
-
-          <!-- DÉPENSÉ -->
-
-          <article class="feature-card">
-
-            <p
-              style="
-                color:#667085;
-                font-size:13px;
-              "
-            >
-              Total dépensé
-            </p>
-
-            <h2
-              id="totalSpent"
-              style="
-                margin-top:8px;
-              "
-            >
-              0 CDF
-            </h2>
-
-          </article>
-
-
-          <!-- COMMANDES -->
-
-          <article class="feature-card">
-
-            <p
-              style="
-                color:#667085;
-                font-size:13px;
-              "
-            >
-              Commandes
-            </p>
-
-            <h2
-              id="ordersCount"
-              style="
-                margin-top:8px;
-              "
-            >
-              0
-            </h2>
-
-          </article>
+          </div>
 
         </div>
 
 
-        <!-- ==============================
-             ACTIONS
-        =============================== -->
+        <!-- =================================
+             STATISTIQUES
+        ================================== -->
 
-        <div
-          class="feature-grid"
-          style="
-            grid-template-columns:
-            repeat(3, 1fr);
-            margin-bottom:45px;
-          "
-        >
+        <div class="stats-grid">
+
+
+          <article class="stat-card">
+
+            <span>
+              Solde actuel
+            </span>
+
+            <strong id="balanceStat">
+              0 CDF
+            </strong>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <span>
+              Total déposé
+            </span>
+
+            <strong id="totalDeposited">
+              0 CDF
+            </strong>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <span>
+              Total dépensé
+            </span>
+
+            <strong id="totalSpent">
+              0 CDF
+            </strong>
+
+          </article>
+
+
+          <article class="stat-card">
+
+            <span>
+              Nombre de commandes
+            </span>
+
+            <strong id="ordersCount">
+              0
+            </strong>
+
+          </article>
+
+
+        </div>
+
+
+        <!-- =================================
+             ACTIONS RAPIDES
+        ================================== -->
+
+        <div class="quick-actions">
+
+
+          <a
+            href="/new-order.html"
+            class="action-card"
+          >
+
+            <span class="action-icon">
+              🛒
+            </span>
+
+            <div>
+
+              <h3>
+                Nouvelle commande
+              </h3>
+
+              <p>
+                Choisissez un service et lancez
+                votre commande.
+              </p>
+
+            </div>
+
+          </a>
+
+
+          <a
+            href="/orders.html"
+            class="action-card"
+          >
+
+            <span class="action-icon">
+              📦
+            </span>
+
+            <div>
+
+              <h3>
+                Mes commandes
+              </h3>
+
+              <p>
+                Consultez vos commandes et leurs statuts.
+              </p>
+
+            </div>
+
+          </a>
+
 
           <a
             href="/deposit.html"
-            class="feature-card"
+            class="action-card"
           >
 
-            <div class="feature-icon">
-              💳
+            <span class="action-icon">
+              💰
+            </span>
+
+            <div>
+
+              <h3>
+                Recharger le solde
+              </h3>
+
+              <p>
+                Airtel Money, Vodacom M-Pesa
+                et Orange Money.
+              </p>
+
             </div>
-
-            <h3>
-              Recharger le solde
-            </h3>
-
-            <p>
-              Airtel Money, Vodacom M-Pesa
-              et Orange Money.
-            </p>
 
           </a>
 
-
-          <a
-            href="#services"
-            class="feature-card"
-          >
-
-            <div class="feature-icon">
-              🚀
-            </div>
-
-            <h3>
-              Nouvelle commande
-            </h3>
-
-            <p>
-              Choisissez un service et
-              lancez votre commande.
-            </p>
-
-          </a>
-
-
-          <a
-            href="#orders"
-            class="feature-card"
-          >
-
-            <div class="feature-icon">
-              📋
-            </div>
-
-            <h3>
-              Mes commandes
-            </h3>
-
-            <p>
-              Consultez l'historique de
-              vos commandes.
-            </p>
-
-          </a>
 
         </div>
 
 
-        <!-- ==============================
-             SERVICES
-        =============================== -->
+        <!-- =================================
+             PLATEFORMES
+        ================================== -->
 
-        <section id="services">
+        <section class="platform-section">
+
 
           <div class="section-title">
 
@@ -322,190 +311,140 @@
           </div>
 
 
-          <div
-            id="platformGrid"
-            class="platform-grid"
-          >
+          <div class="platform-grid">
 
-            <button
+
+            <a
+              href="/new-order.html?platform=Instagram"
               class="platform-card"
-              data-platform="Instagram"
-              type="button"
             >
-              📸
+              <span>◎</span>
               <strong>Instagram</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=Facebook"
               class="platform-card"
-              data-platform="Facebook"
-              type="button"
             >
-              👍
+              <span>f</span>
               <strong>Facebook</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=TikTok"
               class="platform-card"
-              data-platform="TikTok"
-              type="button"
             >
-              🎵
+              <span>♪</span>
               <strong>TikTok</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=YouTube"
               class="platform-card"
-              data-platform="YouTube"
-              type="button"
             >
-              ▶️
+              <span>▶</span>
               <strong>YouTube</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=Telegram"
               class="platform-card"
-              data-platform="Telegram"
-              type="button"
             >
-              ✈️
+              <span>➤</span>
               <strong>Telegram</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=X"
               class="platform-card"
-              data-platform="X"
-              type="button"
             >
-              𝕏
+              <span>𝕏</span>
               <strong>X</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=Snapchat"
               class="platform-card"
-              data-platform="Snapchat"
-              type="button"
             >
-              👻
+              <span>👻</span>
               <strong>Snapchat</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=WhatsApp"
               class="platform-card"
-              data-platform="WhatsApp"
-              type="button"
             >
-              💬
+              <span>◉</span>
               <strong>WhatsApp</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=Spotify"
               class="platform-card"
-              data-platform="Spotify"
-              type="button"
             >
-              🎧
+              <span>♫</span>
               <strong>Spotify</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=LinkedIn"
               class="platform-card"
-              data-platform="LinkedIn"
-              type="button"
             >
-              💼
+              <span>in</span>
               <strong>LinkedIn</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=Discord"
               class="platform-card"
-              data-platform="Discord"
-              type="button"
             >
-              🎮
+              <span>◌</span>
               <strong>Discord</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
 
 
-            <button
+            <a
+              href="/new-order.html?platform=Site Web"
               class="platform-card"
-              data-platform="Website"
-              type="button"
             >
-              🌐
+              <span>⌁</span>
               <strong>Site Web</strong>
-            </button>
+              <small>Voir les services</small>
+            </a>
+
 
           </div>
 
         </section>
 
 
-        <!-- ==============================
-             SERVICES RÉSULTATS
-        =============================== -->
+        <!-- =================================
+             DERNIÈRES COMMANDES
+        ================================== -->
 
-        <section
-          id="serviceResults"
-          style="
-            margin-top:45px;
-          "
-        >
+        <section class="recent-orders">
 
-          <div class="section-title">
-
-            <span>
-              SERVICES DISPONIBLES
-            </span>
-
-            <h2 id="selectedPlatform">
-              Sélectionnez une plateforme
-            </h2>
-
-          </div>
-
-
-          <div
-            id="servicesList"
-            class="feature-grid"
-          >
-
-            <p
-              style="
-                grid-column:1/-1;
-                text-align:center;
-                color:#667085;
-              "
-            >
-              Sélectionnez une plateforme
-              ci-dessus.
-            </p>
-
-          </div>
-
-        </section>
-
-
-        <!-- ==============================
-             COMMANDES
-        =============================== -->
-
-        <section
-          id="orders"
-          style="
-            margin-top:70px;
-          "
-        >
 
           <div class="section-title">
 
@@ -514,30 +453,38 @@
             </span>
 
             <h2>
-              Mes dernières commandes
+              Dernières commandes
             </h2>
+
+            <p>
+              Vos commandes récentes.
+            </p>
 
           </div>
 
 
           <div
-            id="ordersList"
-            class="feature-grid"
+            id="recentOrders"
+            class="orders-list"
           >
 
-            <p
-              style="
-                grid-column:1/-1;
-                text-align:center;
-                color:#667085;
-              "
-            >
-              Chargement des commandes...
-            </p>
+            <div class="empty-state">
+
+              <span>
+                📦
+              </span>
+
+              <p>
+                Chargement...
+              </p>
+
+            </div>
 
           </div>
 
+
         </section>
+
 
       </div>
 
@@ -546,12 +493,12 @@
   </main>
 
 
-  <!-- ================================
+  <!-- =================================
        JAVASCRIPT
-  ================================= -->
+  ================================== -->
 
   <script src="/js/dashboard.js"></script>
 
 </body>
 
-  </html>
+</html>
