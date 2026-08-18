@@ -47,14 +47,11 @@
 
   <main>
 
-    <section class="hero">
+    <section class="auth-section">
 
-      <div
-        class="container"
-        style="max-width: 560px;"
-      >
+      <div class="auth-card">
 
-        <div class="section-title">
+        <div class="auth-header">
 
           <span>
             NOSMYBOOST🇧🇪
@@ -65,8 +62,8 @@
           </h1>
 
           <p>
-            Rejoignez NOSMYBOOST et gérez
-            facilement vos commandes SMM.
+            Créez votre compte et commencez
+            à utiliser nos services.
           </p>
 
         </div>
@@ -74,32 +71,25 @@
 
         <form
           id="registerForm"
-          class="feature-card"
+          autocomplete="on"
         >
+
 
           <!-- NOM -->
 
-          <div style="margin-bottom:18px;">
+          <div class="form-group">
 
             <label for="name">
               Votre nom
             </label>
 
             <input
+              type="text"
               id="name"
               name="name"
-              type="text"
-              placeholder="Leader Nosmy"
+              placeholder="Ex. Leader Nosmy"
               autocomplete="name"
               required
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
             >
 
           </div>
@@ -107,27 +97,19 @@
 
           <!-- EMAIL -->
 
-          <div style="margin-bottom:18px;">
+          <div class="form-group">
 
             <label for="email">
               Adresse Gmail
             </label>
 
             <input
+              type="email"
               id="email"
               name="email"
-              type="email"
-              placeholder="votre@email.com"
+              placeholder="exemple@gmail.com"
               autocomplete="email"
               required
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
             >
 
           </div>
@@ -135,26 +117,18 @@
 
           <!-- WHATSAPP -->
 
-          <div style="margin-bottom:18px;">
+          <div class="form-group">
 
             <label for="whatsapp">
               Numéro WhatsApp
             </label>
 
             <input
+              type="tel"
               id="whatsapp"
               name="whatsapp"
-              type="tel"
-              placeholder="+243..."
+              placeholder="+243 8XX XXX XXX"
               autocomplete="tel"
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
             >
 
           </div>
@@ -162,7 +136,7 @@
 
           <!-- PAYS -->
 
-          <div style="margin-bottom:18px;">
+          <div class="form-group">
 
             <label for="country">
               Pays
@@ -171,19 +145,9 @@
             <select
               id="country"
               name="country"
-              required
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                background:white;
-                outline:none;
-              "
             >
 
-              <option value="CD">
+              <option value="CD" selected>
                 🇨🇩 RD Congo
               </option>
 
@@ -200,7 +164,7 @@
               </option>
 
               <option value="OTHER">
-                🌍 Autre
+                🌍 Autre pays
               </option>
 
             </select>
@@ -210,57 +174,20 @@
 
           <!-- MOT DE PASSE -->
 
-          <div style="margin-bottom:18px;">
+          <div class="form-group">
 
             <label for="password">
               Mot de passe
             </label>
 
             <input
+              type="password"
               id="password"
               name="password"
-              type="password"
               placeholder="Minimum 8 caractères"
-              autocomplete="new-password"
               minlength="8"
-              required
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
-            >
-
-          </div>
-
-
-          <!-- CONFIRMATION -->
-
-          <div style="margin-bottom:20px;">
-
-            <label for="passwordConfirm">
-              Confirmer le mot de passe
-            </label>
-
-            <input
-              id="passwordConfirm"
-              name="passwordConfirm"
-              type="password"
-              placeholder="Répétez votre mot de passe"
               autocomplete="new-password"
-              minlength="8"
               required
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
             >
 
           </div>
@@ -269,50 +196,36 @@
           <!-- MESSAGE -->
 
           <div
-            id="registerMessage"
-            style="
-              margin-bottom:18px;
-              font-size:14px;
-            "
+            id="authMessage"
+            aria-live="polite"
           ></div>
 
 
           <!-- BOUTON -->
 
           <button
-            id="registerButton"
             type="submit"
-            class="btn btn-primary"
-            style="width:100%;"
+            class="btn btn-primary auth-submit"
           >
-            Créer mon compte
+            Créer un compte
           </button>
 
 
-          <p
-            style="
-              text-align:center;
-              margin-top:18px;
-              color:#667085;
-              font-size:14px;
-            "
-          >
-
-            Déjà un compte ?
-
-            <a
-              href="/login.html"
-              style="
-                font-weight:700;
-                text-decoration:underline;
-              "
-            >
-              Connectez-vous
-            </a>
-
-          </p>
-
         </form>
+
+
+        <div class="auth-footer">
+
+          <span>
+            Déjà un compte ?
+          </span>
+
+          <a href="/login.html">
+            Connectez-vous
+          </a>
+
+        </div>
+
 
       </div>
 
