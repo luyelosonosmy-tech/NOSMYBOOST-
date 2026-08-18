@@ -5,10 +5,28 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Initialiser la base de données
+require("./database/database");
+
+// Routes
+const authRoutes = require("./routes/auth");
+
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Fichiers publics
 app.use(express.static(path.join(__dirname, "public")));
+
+// ========================================
+// ROUTES API
+// ========================================
+
+app.use("/api/auth", authRoutes);
+
+// ========================================
+// TEST SERVEUR
+// ========================================
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -18,9 +36,19 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// ========================================
+// PAGE D'ACCUEIL
+// ========================================
+
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(
+    path.join(__dirname, "public", "index.html")
+  );
 });
+
+// ========================================
+// ROUTE INTROUVABLE
+// ========================================
 
 app.use((req, res) => {
   res.status(404).json({
@@ -29,6 +57,12 @@ app.use((req, res) => {
   });
 });
 
+// ========================================
+// DÉMARRAGE
+// ========================================
+
 app.listen(PORT, () => {
-  console.log(`NOSMYBOOST🇧🇪 lancé sur le port ${PORT}`);
+  console.log(
+    `NOSMYBOOST🇧🇪 lancé sur le port ${PORT}`
+  );
 });
