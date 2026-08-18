@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Recharger — NOSMYBOOST🇧🇪</title>
+
+  <meta
+    name="description"
+    content="Rechargez votre solde NOSMYBOOST🇧🇪"
+  >
+
+</head>
+
+<body>
+
+  <header>
+
+    <h1>NOSMYBOOST🇧🇪</h1>
+
+    <a href="/dashboard.html">
+      Retour au dashboard
+    </a>
+
+  </header>
+
+
+  <main>
+
+    <h2>Recharger mon solde</h2>
+
+    <p>
+      Choisissez un moyen de paiement et envoyez votre paiement.
+      Votre dépôt sera vérifié manuellement par un administrateur.
+    </p>
+
+
+    <!-- =================================
+         MONTANT
+    ================================== -->
+
+    <section>
+
+      <h3>1. Montant</h3>
+
+      <label for="amount">
+        Montant en CDF
+      </label>
+
+      <input
+        type="number"
+        id="amount"
+        min="1"
+        step="1"
+        placeholder="Ex: 5000"
+        required
+      >
+
+    </section>
+
+
+    <!-- =================================
+         MOYEN DE PAIEMENT
+    ================================== -->
+
+    <section>
+
+      <h3>2. Moyen de paiement</h3>
+
+      <div id="paymentMethods">
+
+        <p>
+          Chargement des moyens de paiement...
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- =================================
+         PREUVE
+    ================================== -->
+
+    <section>
+
+      <h3>3. Preuve de paiement</h3>
+
+      <label for="proof">
+        Référence / ID de transaction
+      </label>
+
+      <input
+        type="text"
+        id="proof"
+        placeholder="Ex: ID de transaction"
+        required
+      >
+
+      <p>
+        Après avoir effectué le paiement,
+        entrez ici la référence de la transaction.
+      </p>
+
+    </section>
+
+
+    <!-- =================================
+         ENVOYER
+    ================================== -->
+
+    <button
+      type="button"
+      id="depositButton"
+    >
+      Envoyer la demande de dépôt
+    </button>
+
+
+    <p id="depositMessage"></p>
+
+
+    <!-- =================================
+         HISTORIQUE
+    ================================== -->
+
+    <section>
+
+      <h3>Mes dépôts</h3>
+
+      <div id="depositHistory">
+
+        <p>
+          Chargement...
+        </p>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <script src="/js/deposit.js"></script>
+
+</body>
+
+</html>
