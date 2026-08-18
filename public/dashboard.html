@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Dashboard — NOSMYBOOST🇧🇪</title>
+
+  <meta
+    name="description"
+    content="Tableau de bord NOSMYBOOST🇧🇪"
+  >
+
+</head>
+
+<body>
+
+  <header>
+
+    <h1>NOSMYBOOST🇧🇪</h1>
+
+    <div>
+      <span id="userName">Bienvenue</span>
+
+      <button
+        id="logoutButton"
+        type="button"
+      >
+        Déconnexion
+      </button>
+    </div>
+
+  </header>
+
+
+  <main>
+
+    <!-- ================================
+         SOLDE
+    ================================= -->
+
+    <section>
+
+      <h2>Bienvenue</h2>
+
+      <p id="welcomeUser">
+        Chargement...
+      </p>
+
+      <div>
+
+        <h3>Solde actuel</h3>
+
+        <strong id="balance">
+          0 CDF
+        </strong>
+
+      </div>
+
+      <div>
+
+        <h3>Total déposé</h3>
+
+        <strong id="totalDeposited">
+          0 CDF
+        </strong>
+
+      </div>
+
+      <div>
+
+        <h3>Total dépensé</h3>
+
+        <strong id="totalSpent">
+          0 CDF
+        </strong>
+
+      </div>
+
+      <div>
+
+        <h3>Nombre de commandes</h3>
+
+        <strong id="orderCount">
+          0
+        </strong>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================================
+         ACTIONS
+    ================================= -->
+
+    <section>
+
+      <h2>Actions rapides</h2>
+
+      <a href="/deposit.html">
+        Recharger le solde
+      </a>
+
+      <a href="/order.html">
+        Nouvelle commande
+      </a>
+
+      <a href="/orders.html">
+        Mes commandes
+      </a>
+
+    </section>
+
+
+    <!-- ================================
+         PLATEFORMES
+    ================================= -->
+
+    <section>
+
+      <h2>Choisissez votre plateforme</h2>
+
+      <p>
+        Cliquez sur une plateforme pour voir les services disponibles.
+      </p>
+
+
+      <div id="platforms">
+
+        <button data-platform="Instagram">
+          Instagram
+        </button>
+
+        <button data-platform="Facebook">
+          Facebook
+        </button>
+
+        <button data-platform="TikTok">
+          TikTok
+        </button>
+
+        <button data-platform="YouTube">
+          YouTube
+        </button>
+
+        <button data-platform="Telegram">
+          Telegram
+        </button>
+
+        <button data-platform="X">
+          X
+        </button>
+
+        <button data-platform="Snapchat">
+          Snapchat
+        </button>
+
+        <button data-platform="WhatsApp">
+          WhatsApp
+        </button>
+
+        <button data-platform="Spotify">
+          Spotify
+        </button>
+
+        <button data-platform="LinkedIn">
+          LinkedIn
+        </button>
+
+        <button data-platform="Discord">
+          Discord
+        </button>
+
+        <button data-platform="Site Web">
+          Site Web
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================================
+         SERVICES
+    ================================= -->
+
+    <section>
+
+      <h2>Services disponibles</h2>
+
+      <div id="services">
+
+        <p>
+          Sélectionnez une plateforme.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================================
+         MESSAGE
+    ================================= -->
+
+    <p id="dashboardMessage"></p>
+
+  </main>
+
+
+  <script src="/js/dashboard.js"></script>
+
+</body>
+
+</html>
