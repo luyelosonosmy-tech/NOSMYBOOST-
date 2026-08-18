@@ -1,23 +1,19 @@
 /*
 ========================================
 NOSMYBOOST🇧🇪
-DASHBOARD CLIENT
-========================================
-*/
-
-const TOKEN_KEY = "nosmyboost_token";
-const USER_KEY = "nosmyboost_user";
-
-
-/*
-========================================
-TOKEN
+DASHBOARD JAVASCRIPT
 ========================================
 */
 
 const token =
-  localStorage.getItem(TOKEN_KEY);
+  localStorage.getItem("nosmyboost_token");
 
+
+/*
+========================================
+VÉRIFICATION
+========================================
+*/
 
 if (!token) {
 
@@ -29,73 +25,90 @@ if (!token) {
 
 /*
 ========================================
-UTILITAIRE API
+ÉLÉMENTS
 ========================================
 */
 
-async function apiRequest(
-  url,
-  options = {}
-) {
+const userName =
+  document.getElementById("userName");
 
-  const headers = {
+const welcomeName =
+  document.getElementById("welcomeName");
 
-    "Content-Type":
-      "application/json",
+const balance =
+  document.getElementById("balance");
 
-    ...(options.headers || {})
+const balanceStat =
+  document.getElementById("balanceStat");
 
-  };
+const totalDeposited =
+  document.getElementById("totalDeposited");
+
+const totalSpent =
+  document.getElementById("totalSpent");
+
+const ordersCount =
+  document.getElementById("ordersCount");
+
+const recentOrders =
+  document.getElementById("recentOrders");
+
+const logoutButton =
+  document.getElementById("logoutButton");
 
 
-  headers.Authorization =
-    `Bearer ${token}`;
+/*
+========================================
+API
+========================================
+*/
 
+async function api(url) {
 
   const response =
     await fetch(
       url,
       {
-        ...options,
-        headers
+        method: "GET",
+
+        headers: {
+          "Authorization":
+            `Bearer ${token}`
+        }
       }
     );
 
 
-  let data;
-
-  try {
-
-    data =
-      await response.json();
-
-  } catch {
-
-    data = {
-      success: false,
-      message:
-        "Réponse serveur invalide."
-    };
-
-  }
+  const data =
+    await response.json()
+      .catch(() => ({}));
 
 
   if (
-    response.status === 401
+    response.status === 401 ||
+    response.status === 403
   ) {
 
     localStorage.removeItem(
-      TOKEN_KEY
-    );
-
-    localStorage.removeItem(
-      USER_KEY
+      "nosmyboost_token"
     );
 
     window.location.href =
       "/login.html";
 
-    return null;
+    throw new Error(
+      "Session expirée."
+    );
+
+  }
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.message ||
+      "Erreur serveur."
+    );
 
   }
 
@@ -107,42 +120,147 @@ async function apiRequest(
 
 /*
 ========================================
-AFFICHAGE UTILISATEUR
+CHARGER DASHBOARD
 ========================================
 */
 
-function displayUser(user) {
+async function loadDashboard() {
 
-  if (!user) return;
+  try {
+
+    /*
+    ==============================
+    PROFIL
+    ==============================
+    */
+
+    const profile =
+      await api(
+        "/api/auth/me"
+      );
 
 
-  const name =
-    user.name || "Client";
+    const user =
+      profile.user;
 
 
-  const userName =
-    document.getElementById(
-      "userName"
+    if (userName) {
+
+      userName.textContent =
+        user.name ||
+        user.email;
+
+    }
+
+
+    if (welcomeName) {
+
+      welcomeName.textContent =
+        user.name
+          ? user.name
+          : "👋";
+
+    }
+
+
+    /*
+    ==============================
+    STATISTIQUES
+    ==============================
+    */
+
+    const userBalance =
+      Number(
+        user.balance || 0
+      );
+
+
+    const deposited =
+      Number(
+        user.total_deposited || 0
+      );
+
+
+    const spent =
+      Number(
+        user.total_spent || 0
+      );
+
+
+    if (balance) {
+
+      balance.textContent =
+        formatMoney(
+          userBalance
+        ) + " CDF";
+
+    }
+
+
+    if (balanceStat) {
+
+      balanceStat.textContent =
+        formatMoney(
+          userBalance
+        ) + " CDF";
+
+    }
+
+
+    if (totalDeposited) {
+
+      totalDeposited.textContent =
+        formatMoney(
+          deposited
+        ) + " CDF";
+
+    }
+
+
+    if (totalSpent) {
+
+      totalSpent.textContent =
+        formatMoney(
+          spent
+        ) + " CDF";
+
+    }
+
+
+    /*
+    ==============================
+    COMMANDES
+    ==============================
+    */
+
+    await loadRecentOrders();
+
+
+  } catch (error) {
+
+    console.error(
+      "Dashboard:",
+      error
     );
 
-  const welcomeName =
-    document.getElementById(
-      "welcomeName"
-    );
 
+    if (recentOrders) {
 
-  if (userName) {
+      recentOrders.innerHTML = `
+        <div class="empty-state">
 
-    userName.textContent =
-      name;
+          <span>⚠️</span>
 
-  }
+          <p>
+            ${escapeHtml(
+              error.message
+            )}
+          </p>
 
+        </div>
+      `;
 
-  if (welcomeName) {
-
-    welcomeName.textContent =
-      name;
+    }
 
   }
 
@@ -151,481 +269,319 @@ function displayUser(user) {
 
 /*
 ========================================
-FORMAT MONNAIE
+COMMANDES RÉCENTES
 ========================================
 */
 
-function formatCDF(amount) {
+async function loadRecentOrders() {
 
-  const value =
-    Number(amount) || 0;
-
-
-  return (
-    new Intl.NumberFormat(
-      "fr-FR"
-    ).format(value)
-    + " CDF"
-  );
-
-}
-
-
-/*
-========================================
-CHARGER PROFIL
-========================================
-*/
-
-async function loadProfile() {
-
-  const data =
-    await apiRequest(
-      "/api/auth/me"
-    );
-
-
-  if (!data) return;
-
-
-  if (
-    !data.success ||
-    !data.user
-  ) {
-
+  if (!recentOrders)
     return;
 
-  }
 
+  try {
 
-  displayUser(
-    data.user
-  );
-
-
-  const balance =
-    document.getElementById(
-      "balance"
-    );
-
-  const totalDeposited =
-    document.getElementById(
-      "totalDeposited"
-    );
-
-  const totalSpent =
-    document.getElementById(
-      "totalSpent"
-    );
-
-
-  if (balance) {
-
-    balance.textContent =
-      formatCDF(
-        data.user.balance
+    const data =
+      await api(
+        "/api/orders/my"
       );
 
-  }
+
+    const orders =
+      data.orders || [];
 
 
-  if (totalDeposited) {
+    if (ordersCount) {
 
-    totalDeposited.textContent =
-      formatCDF(
-        data.user.total_deposited
-      );
+      ordersCount.textContent =
+        orders.length;
 
-  }
+    }
 
 
-  if (totalSpent) {
+    if (!orders.length) {
 
-    totalSpent.textContent =
-      formatCDF(
-        data.user.total_spent
-      );
+      recentOrders.innerHTML = `
 
-  }
+        <div class="empty-state">
 
-}
+          <span>📦</span>
 
+          <p>
+            Aucune commande
+          </p>
 
-/*
-========================================
-CHARGER SERVICES
-========================================
-*/
+        </div>
 
-async function loadServices(
-  platform
-) {
+      `;
 
-  const list =
-    document.getElementById(
-      "servicesList"
-    );
+      return;
 
-  const title =
-    document.getElementById(
-      "selectedPlatform"
-    );
+    }
 
 
-  if (!list) return;
+    /*
+    ==============================
+    LIMITER AUX 5 DERNIÈRES
+    ==============================
+    */
+
+    const latest =
+      orders.slice(0, 5);
 
 
-  title.textContent =
-    platform;
+    recentOrders.innerHTML =
+      "";
 
 
-  list.innerHTML = `
+    latest.forEach(
+      order => {
 
-    <p
-      style="
-        grid-column:1/-1;
-        text-align:center;
-        color:#667085;
-      "
-    >
-      Chargement des services...
-    </p>
-
-  `;
+        const item =
+          document.createElement(
+            "div"
+          );
 
 
-  const data =
-    await apiRequest(
-      `/api/services?platform=${encodeURIComponent(platform)}`
-    );
+        item.className =
+          "order-item";
 
 
-  if (!data) return;
+        item.innerHTML = `
 
+          <div>
 
-  if (
-    !data.success ||
-    !Array.isArray(data.services)
-  ) {
-
-    list.innerHTML = `
-
-      <p
-        style="
-          grid-column:1/-1;
-          text-align:center;
-          color:#667085;
-        "
-      >
-        Aucun service disponible.
-      </p>
-
-    `;
-
-    return;
-
-  }
-
-
-  if (
-    data.services.length === 0
-  ) {
-
-    list.innerHTML = `
-
-      <p
-        style="
-          grid-column:1/-1;
-          text-align:center;
-          color:#667085;
-        "
-      >
-        Aucun service disponible pour
-        ${platform}.
-      </p>
-
-    `;
-
-    return;
-
-  }
-
-
-  list.innerHTML =
-    data.services
-      .map(service => {
-
-        return `
-
-          <article
-            class="feature-card"
-          >
-
-            <div
-              class="feature-icon"
-            >
-              🚀
-            </div>
-
-            <h3>
-              ${escapeHTML(
-                service.name
-              )}
-            </h3>
+            <strong>
+              Commande #${order.id}
+            </strong>
 
             <p>
-              ${escapeHTML(
-                service.description || ""
-              )}
-            </p>
-
-            <p
-              style="
-                margin-top:12px;
-                font-weight:800;
-              "
-            >
-              ${formatCDF(
-                service.price
-              )}
-            </p>
-
-            <p
-              style="
-                margin-top:5px;
-                color:#667085;
-                font-size:13px;
-              "
-            >
-              Min:
-              ${service.min_quantity}
-
-              —
-
-              Max:
-              ${service.max_quantity}
-            </p>
-
-            <button
-              type="button"
-              class="btn btn-primary"
-              style="
-                width:100%;
-                margin-top:18px;
-              "
-              onclick="selectService(${service.id})"
-            >
-              Commander
-            </button>
-
-          </article>
-
-        `;
-
-      })
-      .join("");
-
-}
-
-
-/*
-========================================
-SÉLECTION SERVICE
-========================================
-*/
-
-function selectService(
-  serviceId
-) {
-
-  /*
-  Cette fonction sera reliée au
-  formulaire de commande dans
-  l'étape suivante.
-  */
-
-  localStorage.setItem(
-    "nosmyboost_selected_service",
-    serviceId
-  );
-
-
-  alert(
-    "Service sélectionné. Le formulaire de commande sera disponible dans l'étape suivante."
-  );
-
-}
-
-
-/*
-========================================
-CHARGER COMMANDES
-========================================
-*/
-
-async function loadOrders() {
-
-  const list =
-    document.getElementById(
-      "ordersList"
-    );
-
-  if (!list) return;
-
-
-  const data =
-    await apiRequest(
-      "/api/orders/my"
-    );
-
-
-  if (!data) return;
-
-
-  if (
-    !data.success ||
-    !Array.isArray(data.orders)
-  ) {
-
-    list.innerHTML = `
-
-      <p
-        style="
-          grid-column:1/-1;
-          text-align:center;
-          color:#667085;
-        "
-      >
-        Impossible de récupérer
-        les commandes.
-      </p>
-
-    `;
-
-    return;
-
-  }
-
-
-  const orders =
-    data.orders;
-
-
-  const count =
-    document.getElementById(
-      "ordersCount"
-    );
-
-
-  if (count) {
-
-    count.textContent =
-      orders.length;
-
-  }
-
-
-  if (orders.length === 0) {
-
-    list.innerHTML = `
-
-      <p
-        style="
-          grid-column:1/-1;
-          text-align:center;
-          color:#667085;
-        "
-      >
-        Aucune commande.
-      </p>
-
-    `;
-
-    return;
-
-  }
-
-
-  list.innerHTML =
-    orders
-      .slice(0, 10)
-      .map(order => {
-
-        return `
-
-          <article
-            class="feature-card"
-          >
-
-            <h3>
-              Commande #${order.id}
-            </h3>
-
-            <p
-              style="
-                margin-top:7px;
-                color:#667085;
-              "
-            >
-              ${escapeHTML(
+              ${escapeHtml(
                 order.service_name ||
                 "Service"
               )}
             </p>
 
-            <p
-              style="
-                margin-top:10px;
-              "
-            >
-              Quantité:
-              <strong>
-                ${order.quantity}
-              </strong>
-            </p>
+          </div>
 
-            <p>
-              Prix:
-              <strong>
-                ${formatCDF(
-                  order.price
-                )}
-              </strong>
-            </p>
 
-            <p
-              style="
-                margin-top:10px;
-                font-weight:700;
-              "
+          <div>
+
+            <strong>
+              ${formatMoney(
+                order.price
+              )} CDF
+            </strong>
+
+            <span
+              class="order-status ${getStatusClass(
+                order.status
+              )}"
             >
-              Statut:
-              ${escapeHTML(
+              ${formatStatus(
                 order.status
               )}
-            </p>
+            </span>
 
-          </article>
+          </div>
 
         `;
 
-      })
-      .join("");
+
+        recentOrders.appendChild(
+          item
+        );
+
+      }
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Orders:",
+      error
+    );
+
+
+    recentOrders.innerHTML = `
+
+      <div class="empty-state">
+
+        <span>📦</span>
+
+        <p>
+          Aucune commande
+        </p>
+
+      </div>
+
+    `;
+
+  }
 
 }
 
 
 /*
 ========================================
-PROTECTION HTML
+DÉCONNEXION
 ========================================
 */
 
-function escapeHTML(
+if (logoutButton) {
+
+  logoutButton.addEventListener(
+    "click",
+    () => {
+
+      localStorage.removeItem(
+        "nosmyboost_token"
+      );
+
+      window.location.href =
+        "/login.html";
+
+    }
+  );
+
+}
+
+
+/*
+========================================
+FORMAT ARGENT
+========================================
+*/
+
+function formatMoney(
+  amount
+) {
+
+  return Number(
+    amount || 0
+  ).toLocaleString(
+    "fr-FR",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }
+  );
+
+}
+
+
+/*
+========================================
+STATUT
+========================================
+*/
+
+function formatStatus(
+  status
+) {
+
+  const statuses = {
+
+    pending:
+      "En attente",
+
+    processing:
+      "En cours",
+
+    completed:
+      "Terminé",
+
+    partial:
+      "Partiel",
+
+    cancelled:
+      "Annulé",
+
+    canceled:
+      "Annulé",
+
+    failed:
+      "Échec"
+
+  };
+
+
+  return (
+    statuses[
+      String(status || "")
+        .toLowerCase()
+    ] ||
+    status ||
+    "Inconnu"
+  );
+
+}
+
+
+/*
+========================================
+CLASSE STATUT
+========================================
+*/
+
+function getStatusClass(
+  status
+) {
+
+  const value =
+    String(
+      status || ""
+    ).toLowerCase();
+
+
+  if (
+    value === "completed"
+  ) {
+
+    return "status-success";
+
+  }
+
+
+  if (
+    value === "cancelled" ||
+    value === "canceled" ||
+    value === "failed"
+  ) {
+
+    return "status-danger";
+
+  }
+
+
+  if (
+    value === "processing"
+  ) {
+
+    return "status-processing";
+
+  }
+
+
+  return "status-pending";
+
+}
+
+
+/*
+========================================
+SÉCURITÉ AFFICHAGE
+========================================
+*/
+
+function escapeHtml(
   value
 ) {
 
-  return String(value ?? "")
+  return String(
+    value ?? ""
+  )
     .replace(
       /&/g,
       "&amp;"
@@ -652,115 +608,8 @@ function escapeHTML(
 
 /*
 ========================================
-PLATEFORMES
+DÉMARRAGE
 ========================================
 */
 
-document
-  .querySelectorAll(
-    "[data-platform]"
-  )
-  .forEach(button => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        const platform =
-          button.dataset.platform;
-
-
-        loadServices(
-          platform
-        );
-
-
-        document
-          .getElementById(
-            "serviceResults"
-          )
-          ?.scrollIntoView({
-            behavior: "smooth"
-          });
-
-      }
-    );
-
-  });
-
-
-/*
-========================================
-DÉCONNEXION
-========================================
-*/
-
-const logoutButton =
-  document.getElementById(
-    "logoutButton"
-  );
-
-
-if (logoutButton) {
-
-  logoutButton.addEventListener(
-    "click",
-    () => {
-
-      localStorage.removeItem(
-        TOKEN_KEY
-      );
-
-      localStorage.removeItem(
-        USER_KEY
-      );
-
-      window.location.href =
-        "/login.html";
-
-    }
-  );
-
-}
-
-
-/*
-========================================
-INITIALISATION
-========================================
-*/
-
-(async function init() {
-
-  const savedUser =
-    localStorage.getItem(
-      USER_KEY
-    );
-
-
-  if (savedUser) {
-
-    try {
-
-      displayUser(
-        JSON.parse(
-          savedUser
-        )
-      );
-
-    } catch {
-
-      localStorage.removeItem(
-        USER_KEY
-      );
-
-    }
-
-  }
-
-
-  await loadProfile();
-
-  await loadOrders();
-
-})();
+loadDashboard();
