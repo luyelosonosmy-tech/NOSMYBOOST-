@@ -1,16 +1,25 @@
-const express = require("express");
-const db = require("../database/database");
+/*
+========================================
+NOSMYBOOST🇧🇪
+DEPOSIT ROUTES
+========================================
+*/
 
-const router = express.Router();
+const express = require("express");
+
+const db =
+  require("../database/database");
 
 const authenticateToken =
   require("../middleware/auth");
 
+const router =
+  express.Router();
+
 
 /*
 ========================================
-NOSMYBOOST🇧🇪
-CRÉER UNE DEMANDE DE DÉPÔT
+CRÉER UN DÉPÔT
 ========================================
 */
 
@@ -20,7 +29,7 @@ router.post(
   (req, res) => {
 
     const userId =
-      Number(req.user.id);
+      req.user.id;
 
     const amount =
       Number(req.body.amount);
@@ -29,60 +38,43 @@ router.post(
       String(
         req.body.method || ""
       )
-      .trim()
-      .toLowerCase();
+        .trim()
+        .toLowerCase();
 
     const proof =
       String(
         req.body.proof || ""
       )
-      .trim();
+        .trim();
 
 
     /*
-    ====================================
-    VALIDATION UTILISATEUR
-    ====================================
-    */
-
-    if (
-      !Number.isInteger(userId) ||
-      userId <= 0
-    ) {
-
-      return res.status(401).json({
-        success: false,
-        message:
-          "Session utilisateur invalide."
-      });
-
-    }
-
-
-    /*
-    ====================================
+    ==============================
     VALIDATION MONTANT
-    ====================================
+    ==============================
     */
 
     if (
       !Number.isFinite(amount) ||
-      amount < 1000
+      amount <= 0
     ) {
 
       return res.status(400).json({
+
         success: false,
+
         message:
-          "Le montant minimum est de 1 000 CDF."
+          "Montant de dépôt invalide."
+
       });
 
     }
 
 
     /*
-    ====================================
-    MOYEN DE PAIEMENT
-    ====================================
+    ==============================
+    MÉTHODES AUTORISÉES
+    ==============================
     */
 
     const allowedMethods = [
@@ -99,37 +91,41 @@ router.post(
     ) {
 
       return res.status(400).json({
+
         success: false,
+
         message:
           "Moyen de paiement invalide."
+
       });
 
     }
 
 
     /*
-    ====================================
+    ==============================
     PREUVE
-    ====================================
+    ==============================
     */
 
-    if (
-      proof.length < 3
-    ) {
+    if (!proof) {
 
       return res.status(400).json({
+
         success: false,
+
         message:
-          "Veuillez fournir la référence ou la preuve du paiement."
+          "La référence du paiement est obligatoire."
+
       });
 
     }
 
 
     /*
-    ====================================
-    CRÉATION DU DÉPÔT
-    ====================================
+    ==============================
+    CRÉER LE DÉPÔT
+    ==============================
     */
 
     db.run(
@@ -144,13 +140,7 @@ router.post(
       )
 
       VALUES
-      (
-        ?,
-        ?,
-        ?,
-        ?,
-        'pending'
-      )
+      (?, ?, ?, ?, 'pending')
       `,
       [
         userId,
@@ -158,51 +148,40 @@ router.post(
         method,
         proof
       ],
-      function (error) {
+      function(error) {
 
         if (error) {
 
           console.error(
-            "Erreur création dépôt:",
+            "Deposit error:",
             error
           );
 
+
           return res.status(500).json({
+
             success: false,
+
             message:
-              "Impossible d'enregistrer la demande de dépôt."
+              "Impossible d'enregistrer le dépôt."
+
           });
 
         }
 
 
-        /*
-        ================================
-        SUCCÈS
-        ================================
-        */
-
-        return res.status(201).json({
+        res.status(201).json({
 
           success: true,
 
           message:
-            "Demande de dépôt envoyée. Elle est en attente de validation.",
+            "Votre demande de dépôt a été envoyée. Elle sera vérifiée par un administrateur.",
 
-          deposit: {
+          depositId:
+            this.lastID,
 
-            id: this.lastID,
-
-            user_id: userId,
-
-            amount,
-
-            method,
-
-            status:
-              "pending"
-
-          }
+          status:
+            "pending"
 
         });
 
@@ -225,7 +204,7 @@ router.get(
   (req, res) => {
 
     const userId =
-      Number(req.user.id);
+      req.user.id;
 
 
     db.all(
@@ -250,14 +229,18 @@ router.get(
         if (error) {
 
           console.error(
-            "Erreur récupération dépôts:",
+            "Deposits error:",
             error
           );
 
+
           return res.status(500).json({
+
             success: false,
+
             message:
               "Impossible de récupérer vos dépôts."
+
           });
 
         }
@@ -278,4 +261,5 @@ router.get(
 );
 
 
-module.exports = router;
+module.exports =
+  router;
