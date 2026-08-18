@@ -1,331 +1,265 @@
-<!DOCTYPE html>
-<html lang="fr">
+/*
+========================================
+NOSMYBOOST🇧🇪
+DEPOSIT ROUTES
+========================================
+*/
 
-<head>
+const express = require("express");
 
-  <meta charset="UTF-8">
+const db =
+  require("../database/database");
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+const authenticateToken =
+  require("../middleware/auth");
 
-  <title>Recharger le solde — NOSMYBOOST🇧🇪</title>
+const router =
+  express.Router();
 
-  <link
-    rel="stylesheet"
-    href="/css/style.css"
-  >
 
-</head>
+/*
+========================================
+CRÉER UN DÉPÔT
+========================================
+*/
 
+router.post(
+  "/",
+  authenticateToken,
+  (req, res) => {
 
-<body>
+    const userId =
+      req.user.id;
 
-  <!-- =================================
-       NAVIGATION
-  ================================== -->
+    const amount =
+      Number(req.body.amount);
 
-  <header class="navbar">
+    const method =
+      String(
+        req.body.method || ""
+      )
+        .trim()
+        .toLowerCase();
 
-    <div class="container nav-content">
+    const proof =
+      String(
+        req.body.proof || ""
+      )
+        .trim();
 
-      <a
-        href="/dashboard.html"
-        class="logo"
-      >
-        NOSMYBOOST🇧🇪
-      </a>
 
+    /*
+    ==============================
+    VALIDATION MONTANT
+    ==============================
+    */
 
-      <nav class="dashboard-nav">
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
 
-        <a href="/dashboard.html">
-          Accueil
-        </a>
+      return res.status(400).json({
 
-        <a href="/deposit.html">
-          Recharger
-        </a>
+        success: false,
 
-        <a href="/orders.html">
-          Commandes
-        </a>
+        message:
+          "Montant de dépôt invalide."
 
-      </nav>
+      });
 
+    }
 
-      <button
-        id="logoutButton"
-        type="button"
-        class="btn btn-outline"
-      >
-        Déconnexion
-      </button>
 
-    </div>
+    /*
+    ==============================
+    MÉTHODES AUTORISÉES
+    ==============================
+    */
 
-  </header>
+    const allowedMethods = [
+      "airtel",
+      "mpesa",
+      "orange"
+    ];
 
 
-  <!-- =================================
-       DÉPÔT
-  ================================== -->
+    if (
+      !allowedMethods.includes(
+        method
+      )
+    ) {
 
-  <main>
+      return res.status(400).json({
 
-    <section class="deposit-section">
+        success: false,
 
-      <div class="container">
+        message:
+          "Moyen de paiement invalide."
 
+      });
 
-        <div class="section-title">
+    }
 
-          <span>
-            NOSMYBOOST🇧🇪
-          </span>
 
-          <h1>
-            Recharger le solde
-          </h1>
+    /*
+    ==============================
+    PREUVE
+    ==============================
+    */
 
-          <p>
-            Choisissez votre moyen de paiement,
-            effectuez le transfert puis envoyez
-            votre demande de confirmation.
-          </p>
+    if (!proof) {
 
-        </div>
+      return res.status(400).json({
 
+        success: false,
 
-        <!-- =================================
-             SOLDE ACTUEL
-        ================================== -->
+        message:
+          "La référence du paiement est obligatoire."
 
-        <div class="balance-box deposit-balance">
+      });
 
-          <span>
-            Votre solde actuel
-          </span>
+    }
 
-          <strong id="currentBalance">
-            Chargement...
-          </strong>
 
-        </div>
+    /*
+    ==============================
+    CRÉER LE DÉPÔT
+    ==============================
+    */
 
+    db.run(
+      `
+      INSERT INTO deposits
+      (
+        user_id,
+        amount,
+        method,
+        proof,
+        status
+      )
 
-        <!-- =================================
-             FORMULAIRE DÉPÔT
-        ================================== -->
+      VALUES
+      (?, ?, ?, ?, 'pending')
+      `,
+      [
+        userId,
+        amount,
+        method,
+        proof
+      ],
+      function(error) {
 
-        <div class="deposit-card">
+        if (error) {
 
+          console.error(
+            "Deposit error:",
+            error
+          );
 
-          <h2>
-            Effectuer un dépôt
-          </h2>
 
+          return res.status(500).json({
 
-          <p class="deposit-info">
+            success: false,
 
-            Après votre paiement, envoyez les
-            informations demandées afin qu'un
-            administrateur puisse confirmer votre
-            dépôt.
+            message:
+              "Impossible d'enregistrer le dépôt."
 
-          </p>
+          });
 
+        }
 
-          <!-- MONTANT -->
 
-          <div class="form-group">
+        res.status(201).json({
 
-            <label for="amount">
-              Montant
-            </label>
+          success: true,
 
-            <input
-              type="number"
-              id="amount"
-              name="amount"
-              min="1"
-              step="1"
-              placeholder="Ex. 5000"
-              required
-            >
+          message:
+            "Votre demande de dépôt a été envoyée. Elle sera vérifiée par un administrateur.",
 
-            <small>
-              Montant en CDF.
-            </small>
+          depositId:
+            this.lastID,
 
-          </div>
+          status:
+            "pending"
 
+        });
 
-          <!-- =================================
-               MÉTHODE
-          ================================== -->
+      }
+    );
 
-          <div class="form-group">
+  }
+);
 
-            <label for="method">
-              Moyen de paiement
-            </label>
 
-            <select
-              id="method"
-              name="method"
-              required
-            >
+/*
+========================================
+MES DÉPÔTS
+========================================
+*/
 
-              <option
-                value=""
-                selected
-                disabled
-              >
-                Choisissez un moyen de paiement
-              </option>
+router.get(
+  "/my",
+  authenticateToken,
+  (req, res) => {
 
+    const userId =
+      req.user.id;
 
-              <option value="airtel">
-                🔴 Airtel Money
-              </option>
 
+    db.all(
+      `
+      SELECT
+        id,
+        amount,
+        method,
+        proof,
+        status,
+        created_at
 
-              <option value="mpesa">
-                🟢 Vodacom M-Pesa
-              </option>
+      FROM deposits
 
+      WHERE user_id = ?
 
-              <option value="orange">
-                🟠 Orange Money
-              </option>
+      ORDER BY id DESC
+      `,
+      [userId],
+      (error, deposits) => {
 
-            </select>
+        if (error) {
 
-          </div>
+          console.error(
+            "Deposits error:",
+            error
+          );
 
 
-          <!-- =================================
-               INFORMATIONS PAIEMENT
-          ================================== -->
+          return res.status(500).json({
 
-          <div
-            id="paymentInstructions"
-            class="payment-instructions"
-          >
+            success: false,
 
-            <p>
-              Choisissez un moyen de paiement
-              pour voir les instructions.
-            </p>
+            message:
+              "Impossible de récupérer vos dépôts."
 
-          </div>
+          });
 
+        }
 
-          <!-- =================================
-               PREUVE
-          ================================== -->
 
-          <div class="form-group">
+        res.json({
 
-            <label for="proof">
-              Référence / preuve du paiement
-            </label>
+          success: true,
 
-            <input
-              type="text"
-              id="proof"
-              name="proof"
-              placeholder="Ex. ID de transaction"
-              maxlength="200"
-              required
-            >
+          deposits
 
-            <small>
-              Indiquez la référence visible après
-              votre paiement.
-            </small>
+        });
 
-          </div>
+      }
+    );
 
+  }
+);
 
-          <!-- =================================
-               MESSAGE
-          ================================== -->
 
-          <div
-            id="depositMessage"
-            aria-live="polite"
-          ></div>
-
-
-          <!-- =================================
-               BOUTON
-          ================================== -->
-
-          <button
-            type="submit"
-            id="depositButton"
-            class="btn btn-primary"
-          >
-            Envoyer la demande
-          </button>
-
-
-        </div>
-
-
-        <!-- =================================
-             HISTORIQUE
-        ================================== -->
-
-        <section class="deposit-history">
-
-          <div class="section-title">
-
-            <span>
-              HISTORIQUE
-            </span>
-
-            <h2>
-              Mes dépôts
-            </h2>
-
-          </div>
-
-
-          <div
-            id="depositHistory"
-            class="orders-list"
-          >
-
-            <div class="empty-state">
-
-              <span>
-                💳
-              </span>
-
-              <p>
-                Aucun dépôt pour le moment.
-              </p>
-
-            </div>
-
-          </div>
-
-        </section>
-
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <script src="/js/deposit.js"></script>
-
-</body>
-
-</html>
+module.exports =
+  router;
