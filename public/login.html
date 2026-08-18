@@ -1,81 +1,194 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Connexion — NOSMYBOOST🇧🇪</title>
 
-  <meta
-    name="description"
-    content="Connectez-vous à votre compte NOSMYBOOST🇧🇪"
+  <link
+    rel="stylesheet"
+    href="/css/style.css"
   >
+
 </head>
 
 <body>
 
-  <main>
+  <header class="navbar">
 
-    <h1>NOSMYBOOST🇧🇪</h1>
+    <div class="container nav-content">
 
-    <h2>Connexion</h2>
+      <a
+        href="/"
+        class="logo"
+      >
+        NOSMYBOOST🇧🇪
+      </a>
 
-    <form id="loginForm">
-
-      <div>
-        <label for="email">
-          Adresse Gmail
-        </label>
-
-        <input
-          type="email"
-          id="email"
-          name="email"
-          placeholder="exemple@gmail.com"
-          autocomplete="email"
-          required
-        >
-      </div>
-
-      <div>
-        <label for="password">
-          Mot de passe
-        </label>
-
-        <input
-          type="password"
-          id="password"
-          name="password"
-          placeholder="Votre mot de passe"
-          autocomplete="current-password"
-          required
-        >
-      </div>
-
-      <button type="submit">
-        Se connecter
-      </button>
-
-      <p id="loginMessage"></p>
-
-    </form>
-
-    <p>
-      Vous n'avez pas encore de compte ?
-      <a href="/register.html">
+      <a
+        href="/register.html"
+        class="btn btn-primary"
+      >
         Créer un compte
       </a>
-    </p>
 
-    <p>
-      <a href="/">
-        Retour à l'accueil
-      </a>
-    </p>
+    </div>
+
+  </header>
+
+
+  <main>
+
+    <section class="hero">
+
+      <div
+        class="container"
+        style="max-width: 520px;"
+      >
+
+        <div class="section-title">
+
+          <span>
+            NOSMYBOOST🇧🇪
+          </span>
+
+          <h1>
+            Connexion
+          </h1>
+
+          <p>
+            Connectez-vous à votre espace
+            client.
+          </p>
+
+        </div>
+
+
+        <form
+          id="loginForm"
+          class="feature-card"
+        >
+
+          <!-- EMAIL -->
+
+          <div style="margin-bottom:18px;">
+
+            <label for="email">
+              Adresse email
+            </label>
+
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="votre@email.com"
+              autocomplete="email"
+              required
+              style="
+                width:100%;
+                margin-top:7px;
+                padding:13px;
+                border:1px solid #d7dde7;
+                border-radius:10px;
+                outline:none;
+              "
+            >
+
+          </div>
+
+
+          <!-- MOT DE PASSE -->
+
+          <div style="margin-bottom:20px;">
+
+            <label for="password">
+              Mot de passe
+            </label>
+
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Votre mot de passe"
+              autocomplete="current-password"
+              required
+              style="
+                width:100%;
+                margin-top:7px;
+                padding:13px;
+                border:1px solid #d7dde7;
+                border-radius:10px;
+                outline:none;
+              "
+            >
+
+          </div>
+
+
+          <!-- MESSAGE -->
+
+          <div
+            id="loginMessage"
+            style="
+              margin-bottom:18px;
+              font-size:14px;
+            "
+          ></div>
+
+
+          <!-- BOUTON -->
+
+          <button
+            id="loginButton"
+            type="submit"
+            class="btn btn-primary"
+            style="width:100%;"
+          >
+            Se connecter
+          </button>
+
+
+          <p
+            style="
+              text-align:center;
+              margin-top:18px;
+              color:#667085;
+              font-size:14px;
+            "
+          >
+
+            Vous n'avez pas encore de compte ?
+
+            <a
+              href="/register.html"
+              style="
+                font-weight:700;
+                text-decoration:underline;
+              "
+            >
+              Créer un compte
+            </a>
+
+          </p>
+
+        </form>
+
+      </div>
+
+    </section>
 
   </main>
+
 
   <script src="/js/auth.js"></script>
 
 </body>
+
 </html>
