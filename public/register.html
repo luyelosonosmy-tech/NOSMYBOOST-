@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Créer un compte — NOSMYBOOST🇧🇪</title>
+
+  <meta
+    name="description"
+    content="Créez votre compte NOSMYBOOST🇧🇪"
+  >
+
+</head>
+
+<body>
+
+  <main>
+
+    <h1>NOSMYBOOST🇧🇪</h1>
+
+    <h2>Créer un compte</h2>
+
+    <form id="registerForm">
+
+      <div>
+
+        <label for="name">
+          Votre nom
+        </label>
+
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Votre nom"
+          autocomplete="name"
+          required
+        >
+
+      </div>
+
+
+      <div>
+
+        <label for="email">
+          Adresse Gmail
+        </label>
+
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="exemple@gmail.com"
+          autocomplete="email"
+          required
+        >
+
+      </div>
+
+
+      <div>
+
+        <label for="whatsapp">
+          Numéro WhatsApp
+        </label>
+
+        <input
+          type="tel"
+          id="whatsapp"
+          name="whatsapp"
+          placeholder="+243..."
+          autocomplete="tel"
+        >
+
+      </div>
+
+
+      <div>
+
+        <label for="country">
+          Pays
+        </label>
+
+        <select
+          id="country"
+          name="country"
+          required
+        >
+
+          <option value="CD">
+            🇨🇩 RD Congo
+          </option>
+
+          <option value="CG">
+            🇨🇬 Congo
+          </option>
+
+          <option value="BE">
+            🇧🇪 Belgique
+          </option>
+
+          <option value="FR">
+            🇫🇷 France
+          </option>
+
+          <option value="OTHER">
+            🌍 Autre
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div>
+
+        <label for="password">
+          Mot de passe
+        </label>
+
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Créer un mot de passe"
+          autocomplete="new-password"
+          minlength="8"
+          required
+        >
+
+      </div>
+
+
+      <div>
+
+        <label for="confirmPassword">
+          Confirmer le mot de passe
+        </label>
+
+        <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          placeholder="Confirmer le mot de passe"
+          autocomplete="new-password"
+          minlength="8"
+          required
+        >
+
+      </div>
+
+
+      <button type="submit">
+        Créer mon compte
+      </button>
+
+
+      <p id="registerMessage"></p>
+
+    </form>
+
+
+    <p>
+
+      Déjà un compte ?
+
+      <a href="/login.html">
+        Connectez-vous
+      </a>
+
+    </p>
+
+
+    <p>
+
+      <a href="/">
+        Retour à l'accueil
+      </a>
+
+    </p>
+
+  </main>
+
+
+  <script src="/js/auth.js"></script>
+
+</body>
+
+  </html>
