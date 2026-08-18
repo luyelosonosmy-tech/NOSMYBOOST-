@@ -11,6 +11,7 @@ require("./database/database");
 // Routes
 const authRoutes = require("./routes/auth");
 const servicesRoutes = require("./routes/services");
+const depositsRoutes = require("./routes/deposits");
 
 // Middlewares
 app.use(express.json());
@@ -25,6 +26,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/services", servicesRoutes);
+app.use("/api/deposits", depositsRoutes);
 
 // ========================================
 // TEST SERVEUR
