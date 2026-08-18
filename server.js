@@ -2,18 +2,28 @@ const express = require("express");
 const path = require("path");
 require("dotenv").config();
 
+const db = require("./database/database");
+
+const authRoutes =
+  require("./routes/auth");
+
+const serviceRoutes =
+  require("./routes/services");
+
+const orderRoutes =
+  require("./routes/orders");
+
+const depositRoutes =
+  require("./routes/deposits");
+
+const adminRoutes =
+  require("./routes/admin");
+
+
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
-
-/*
-========================================
-DATABASE
-========================================
-*/
-
-require("./database/database");
+const PORT =
+  process.env.PORT || 3000;
 
 
 /*
@@ -22,7 +32,11 @@ MIDDLEWARES
 ========================================
 */
 
-app.use(express.json());
+app.use(
+  express.json({
+    limit: "2mb"
+  })
+);
 
 app.use(
   express.urlencoded({
@@ -33,29 +47,23 @@ app.use(
 
 /*
 ========================================
-API ROUTES
+STATIC FILES
 ========================================
 */
 
-const authRoutes =
-  require("./routes/auth");
-
-const servicesRoutes =
-  require("./routes/services");
-
-const ordersRoutes =
-  require("./routes/orders");
-
-const depositsRoutes =
-  require("./routes/deposits");
-
-const adminRoutes =
-  require("./routes/admin");
+app.use(
+  express.static(
+    path.join(
+      __dirname,
+      "public"
+    )
+  )
+);
 
 
 /*
 ========================================
-REGISTER API
+API ROUTES
 ========================================
 */
 
@@ -66,17 +74,17 @@ app.use(
 
 app.use(
   "/api/services",
-  servicesRoutes
+  serviceRoutes
 );
 
 app.use(
   "/api/orders",
-  ordersRoutes
+  orderRoutes
 );
 
 app.use(
   "/api/deposits",
-  depositsRoutes
+  depositRoutes
 );
 
 app.use(
@@ -113,23 +121,7 @@ app.get(
 
 /*
 ========================================
-FRONTEND
-========================================
-*/
-
-app.use(
-  express.static(
-    path.join(
-      __dirname,
-      "public"
-    )
-  )
-);
-
-
-/*
-========================================
-ACCUEIL
+PAGE PRINCIPALE
 ========================================
 */
 
@@ -151,7 +143,7 @@ app.get(
 
 /*
 ========================================
-404 API
+ERREUR API
 ========================================
 */
 
@@ -174,16 +166,27 @@ app.use(
 
 /*
 ========================================
-404 FRONTEND
+ERREUR GÉNÉRALE
 ========================================
 */
 
 app.use(
-  (req, res) => {
+  (error, req, res, next) => {
 
-    res.status(404).send(
-      "Page introuvable."
+    console.error(
+      "Erreur serveur:",
+      error
     );
+
+
+    res.status(500).json({
+
+      success: false,
+
+      message:
+        "Erreur interne du serveur."
+
+    });
 
   }
 );
@@ -191,7 +194,7 @@ app.use(
 
 /*
 ========================================
-SERVER
+DÉMARRAGE
 ========================================
 */
 
