@@ -49,6 +49,9 @@ const ordersRoutes =
 const depositsRoutes =
   require("./routes/deposits");
 
+const adminRoutes =
+  require("./routes/admin");
+
 
 /*
 ========================================
@@ -74,6 +77,11 @@ app.use(
 app.use(
   "/api/deposits",
   depositsRoutes
+);
+
+app.use(
+  "/api/admin",
+  adminRoutes
 );
 
 
