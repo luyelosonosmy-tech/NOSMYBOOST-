@@ -19,7 +19,12 @@
 
 </head>
 
+
 <body>
+
+  <!-- ================================
+       NAVBAR
+  ================================= -->
 
   <header class="navbar">
 
@@ -32,9 +37,10 @@
         NOSMYBOOST🇧🇪
       </a>
 
+
       <a
         href="/register.html"
-        class="btn btn-primary"
+        class="btn btn-outline"
       >
         Créer un compte
       </a>
@@ -44,16 +50,18 @@
   </header>
 
 
+  <!-- ================================
+       CONNEXION
+  ================================= -->
+
   <main>
 
-    <section class="hero">
+    <section class="auth-section">
 
-      <div
-        class="container"
-        style="max-width: 520px;"
-      >
+      <div class="auth-card">
 
-        <div class="section-title">
+
+        <div class="auth-header">
 
           <span>
             NOSMYBOOST🇧🇪
@@ -71,62 +79,47 @@
         </div>
 
 
+        <!-- ==========================
+             FORMULAIRE
+        =========================== -->
+
         <form
           id="loginForm"
-          class="feature-card"
+          autocomplete="on"
         >
 
-          <!-- EMAIL -->
 
-          <div style="margin-bottom:18px;">
+          <div class="form-group">
 
             <label for="email">
-              Adresse email
+              Adresse Gmail
             </label>
 
             <input
+              type="email"
               id="email"
               name="email"
-              type="email"
-              placeholder="votre@email.com"
+              placeholder="exemple@gmail.com"
               autocomplete="email"
               required
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
             >
 
           </div>
 
 
-          <!-- MOT DE PASSE -->
-
-          <div style="margin-bottom:20px;">
+          <div class="form-group">
 
             <label for="password">
               Mot de passe
             </label>
 
             <input
+              type="password"
               id="password"
               name="password"
-              type="password"
               placeholder="Votre mot de passe"
               autocomplete="current-password"
               required
-              style="
-                width:100%;
-                margin-top:7px;
-                padding:13px;
-                border:1px solid #d7dde7;
-                border-radius:10px;
-                outline:none;
-              "
             >
 
           </div>
@@ -135,50 +128,40 @@
           <!-- MESSAGE -->
 
           <div
-            id="loginMessage"
-            style="
-              margin-bottom:18px;
-              font-size:14px;
-            "
+            id="authMessage"
+            aria-live="polite"
           ></div>
 
 
           <!-- BOUTON -->
 
           <button
-            id="loginButton"
             type="submit"
-            class="btn btn-primary"
-            style="width:100%;"
+            class="btn btn-primary auth-submit"
           >
             Se connecter
           </button>
 
 
-          <p
-            style="
-              text-align:center;
-              margin-top:18px;
-              color:#667085;
-              font-size:14px;
-            "
-          >
-
-            Vous n'avez pas encore de compte ?
-
-            <a
-              href="/register.html"
-              style="
-                font-weight:700;
-                text-decoration:underline;
-              "
-            >
-              Créer un compte
-            </a>
-
-          </p>
-
         </form>
+
+
+        <!-- ==========================
+             CRÉATION COMPTE
+        =========================== -->
+
+        <div class="auth-footer">
+
+          <span>
+            Vous n'avez pas encore de compte ?
+          </span>
+
+          <a href="/register.html">
+            Créer un compte
+          </a>
+
+        </div>
+
 
       </div>
 
