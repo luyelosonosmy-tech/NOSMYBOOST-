@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Connexion — NOSMYBOOST🇧🇪</title>
+
+  <meta
+    name="description"
+    content="Connectez-vous à votre compte NOSMYBOOST🇧🇪"
+  >
+</head>
+
+<body>
+
+  <main>
+
+    <h1>NOSMYBOOST🇧🇪</h1>
+
+    <h2>Connexion</h2>
+
+    <form id="loginForm">
+
+      <div>
+        <label for="email">
+          Adresse Gmail
+        </label>
+
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="exemple@gmail.com"
+          autocomplete="email"
+          required
+        >
+      </div>
+
+      <div>
+        <label for="password">
+          Mot de passe
+        </label>
+
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Votre mot de passe"
+          autocomplete="current-password"
+          required
+        >
+      </div>
+
+      <button type="submit">
+        Se connecter
+      </button>
+
+      <p id="loginMessage"></p>
+
+    </form>
+
+    <p>
+      Vous n'avez pas encore de compte ?
+      <a href="/register.html">
+        Créer un compte
+      </a>
+    </p>
+
+    <p>
+      <a href="/">
+        Retour à l'accueil
+      </a>
+    </p>
+
+  </main>
+
+  <script src="/js/auth.js"></script>
+
+</body>
+</html>
