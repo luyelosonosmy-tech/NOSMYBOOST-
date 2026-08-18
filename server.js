@@ -3,72 +3,197 @@ const path = require("path");
 require("dotenv").config();
 
 const app = express();
+
 const PORT = process.env.PORT || 3000;
 
-// Initialiser la base de données
+
+/*
+========================================
+DATABASE
+========================================
+*/
+
 require("./database/database");
 
-// Routes
-const authRoutes = require("./routes/auth");
-const servicesRoutes = require("./routes/services");
-const depositsRoutes = require("./routes/deposits");
-const adminRoutes = require("./routes/admin");
 
-// Middlewares
+/*
+========================================
+MIDDLEWARES
+========================================
+*/
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Fichiers publics
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  express.urlencoded({
+    extended: true
+  })
+);
 
-// ========================================
-// ROUTES API
-// ========================================
 
-app.use("/api/auth", authRoutes);
-app.use("/api/services", servicesRoutes);
-app.use("/api/deposits", depositsRoutes);
-app.use("/api/admin", adminRoutes);
+/*
+========================================
+API ROUTES
+========================================
+*/
 
-// ========================================
-// TEST SERVEUR
-// ========================================
+const authRoutes =
+  require("./routes/auth");
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    site: "NOSMYBOOST🇧🇪",
-    status: "online"
-  });
-});
+const servicesRoutes =
+  require("./routes/services");
 
-// ========================================
-// PAGE D'ACCUEIL
-// ========================================
+const ordersRoutes =
+  require("./routes/orders");
 
-app.get("/", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "public", "index.html")
-  );
-});
+const depositsRoutes =
+  require("./routes/deposits");
 
-// ========================================
-// ROUTE INTROUVABLE
-// ========================================
 
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route introuvable."
-  });
-});
+/*
+========================================
+REGISTER API
+========================================
+*/
 
-// ========================================
-// DÉMARRAGE
-// ========================================
+app.use(
+  "/api/auth",
+  authRoutes
+);
 
-app.listen(PORT, () => {
-  console.log(
-    `NOSMYBOOST🇧🇪 lancé sur le port ${PORT}`
-  );
-});
+app.use(
+  "/api/services",
+  servicesRoutes
+);
+
+app.use(
+  "/api/orders",
+  ordersRoutes
+);
+
+app.use(
+  "/api/deposits",
+  depositsRoutes
+);
+
+
+/*
+========================================
+HEALTH CHECK
+========================================
+*/
+
+app.get(
+  "/api/health",
+  (req, res) => {
+
+    res.json({
+
+      success: true,
+
+      site:
+        "NOSMYBOOST🇧🇪",
+
+      status:
+        "online"
+
+    });
+
+  }
+);
+
+
+/*
+========================================
+FRONTEND
+========================================
+*/
+
+app.use(
+  express.static(
+    path.join(
+      __dirname,
+      "public"
+    )
+  )
+);
+
+
+/*
+========================================
+ACCUEIL
+========================================
+*/
+
+app.get(
+  "/",
+  (req, res) => {
+
+    res.sendFile(
+      path.join(
+        __dirname,
+        "public",
+        "index.html"
+      )
+    );
+
+  }
+);
+
+
+/*
+========================================
+404 API
+========================================
+*/
+
+app.use(
+  "/api",
+  (req, res) => {
+
+    res.status(404).json({
+
+      success: false,
+
+      message:
+        "Route API introuvable."
+
+    });
+
+  }
+);
+
+
+/*
+========================================
+404 FRONTEND
+========================================
+*/
+
+app.use(
+  (req, res) => {
+
+    res.status(404).send(
+      "Page introuvable."
+    );
+
+  }
+);
+
+
+/*
+========================================
+SERVER
+========================================
+*/
+
+app.listen(
+  PORT,
+  () => {
+
+    console.log(
+      `NOSMYBOOST🇧🇪 lancé sur le port ${PORT}`
+    );
+
+  }
+);
