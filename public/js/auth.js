@@ -1,6 +1,7 @@
 /*
 ========================================
-NOSMYBOOST🇧🇪 — AUTHENTIFICATION
+NOSMYBOOST🇧🇪
+AUTH JAVASCRIPT
 ========================================
 */
 
@@ -12,7 +13,9 @@ INSCRIPTION
 */
 
 const registerForm =
-  document.getElementById("registerForm");
+  document.getElementById(
+    "registerForm"
+  );
 
 
 if (registerForm) {
@@ -25,51 +28,48 @@ if (registerForm) {
 
 
       const name =
-        document.getElementById("name")
-          .value
-          .trim();
+        document.getElementById(
+          "name"
+        )?.value.trim();
+
 
       const email =
-        document.getElementById("email")
-          .value
-          .trim();
+        document.getElementById(
+          "email"
+        )?.value.trim();
+
 
       const whatsapp =
-        document.getElementById("whatsapp")
-          .value
-          .trim();
+        document.getElementById(
+          "whatsapp"
+        )?.value.trim();
+
 
       const country =
-        document.getElementById("country")
-          .value;
+        document.getElementById(
+          "country"
+        )?.value || "CD";
+
 
       const password =
-        document.getElementById("password")
-          .value;
+        document.getElementById(
+          "password"
+        )?.value;
 
-      const passwordConfirm =
-        document.getElementById("passwordConfirm")
-          .value;
 
       const message =
-        document.getElementById("registerMessage");
+        document.getElementById(
+          "authMessage"
+        );
 
-      const button =
-        document.getElementById("registerButton");
 
+      if (!name || !email || !password) {
 
-      /*
-      ================================
-      VALIDATION
-      ================================
-      */
-
-      if (
-        password !== passwordConfirm
-      ) {
-
-        message.textContent =
-          "Les deux mots de passe ne correspondent pas.";
+        showAuthMessage(
+          message,
+          "Veuillez remplir tous les champs obligatoires.",
+          "error"
+        );
 
         return;
 
@@ -78,35 +78,30 @@ if (registerForm) {
 
       if (password.length < 8) {
 
-        message.textContent =
-          "Le mot de passe doit contenir au moins 8 caractères.";
+        showAuthMessage(
+          message,
+          "Le mot de passe doit contenir au moins 8 caractères.",
+          "error"
+        );
 
         return;
 
       }
 
 
-      /*
-      ================================
-      CHARGEMENT
-      ================================
-      */
-
-      button.disabled = true;
-
-      button.textContent =
-        "Création en cours...";
-
-      message.textContent = "";
-
-
       try {
+
+        showAuthMessage(
+          message,
+          "Création du compte...",
+          "info"
+        );
+
 
         const response =
           await fetch(
             "/api/auth/register",
             {
-
               method: "POST",
 
               headers: {
@@ -118,9 +113,13 @@ if (registerForm) {
                 JSON.stringify({
 
                   name,
+
                   email,
+
                   whatsapp,
+
                   country,
+
                   password
 
                 })
@@ -133,51 +132,46 @@ if (registerForm) {
           await response.json();
 
 
-        if (
-          !response.ok ||
-          !data.success
-        ) {
+        if (!response.ok) {
 
-          message.textContent =
+          throw new Error(
             data.message ||
-            "Impossible de créer le compte.";
-
-          return;
+            "Impossible de créer le compte."
+          );
 
         }
 
 
-        /*
-        ================================
-        SUCCÈS
-        ================================
-        */
-
-        message.textContent =
-          "Compte créé avec succès. Redirection vers la connexion...";
+        showAuthMessage(
+          message,
+          "Compte créé avec succès. Vous pouvez maintenant vous connecter.",
+          "success"
+        );
 
 
-        setTimeout(() => {
+        setTimeout(
+          () => {
 
-          window.location.href =
-            "/login.html";
+            window.location.href =
+              "/login.html";
 
-        }, 1200);
+          },
+          1200
+        );
 
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          error
+        );
 
-        message.textContent =
-          "Impossible de contacter le serveur.";
 
-      } finally {
-
-        button.disabled = false;
-
-        button.textContent =
-          "Créer mon compte";
+        showAuthMessage(
+          message,
+          error.message,
+          "error"
+        );
 
       }
 
@@ -194,7 +188,9 @@ CONNEXION
 */
 
 const loginForm =
-  document.getElementById("loginForm");
+  document.getElementById(
+    "loginForm"
+  );
 
 
 if (loginForm) {
@@ -207,42 +203,49 @@ if (loginForm) {
 
 
       const email =
-        document.getElementById("email")
-          .value
-          .trim();
+        document.getElementById(
+          "email"
+        )?.value.trim();
+
 
       const password =
-        document.getElementById("password")
-          .value;
+        document.getElementById(
+          "password"
+        )?.value;
+
 
       const message =
-        document.getElementById("loginMessage");
+        document.getElementById(
+          "authMessage"
+        );
 
-      const button =
-        document.getElementById("loginButton");
 
+      if (!email || !password) {
 
-      /*
-      ================================
-      CHARGEMENT
-      ================================
-      */
+        showAuthMessage(
+          message,
+          "Email et mot de passe requis.",
+          "error"
+        );
 
-      button.disabled = true;
+        return;
 
-      button.textContent =
-        "Connexion...";
-
-      message.textContent = "";
+      }
 
 
       try {
+
+        showAuthMessage(
+          message,
+          "Connexion...",
+          "info"
+        );
+
 
         const response =
           await fetch(
             "/api/auth/login",
             {
-
               method: "POST",
 
               headers: {
@@ -254,6 +257,7 @@ if (loginForm) {
                 JSON.stringify({
 
                   email,
+
                   password
 
                 })
@@ -266,24 +270,20 @@ if (loginForm) {
           await response.json();
 
 
-        if (
-          !response.ok ||
-          !data.success
-        ) {
+        if (!response.ok) {
 
-          message.textContent =
+          throw new Error(
             data.message ||
-            "Connexion impossible.";
-
-          return;
+            "Connexion impossible."
+          );
 
         }
 
 
         /*
-        ================================
-        SAUVEGARDER SESSION
-        ================================
+        ==============================
+        SAUVEGARDER JWT
+        ==============================
         */
 
         localStorage.setItem(
@@ -292,47 +292,107 @@ if (loginForm) {
         );
 
 
-        localStorage.setItem(
-          "nosmyboost_user",
-          JSON.stringify(data.user)
+        showAuthMessage(
+          message,
+          "Connexion réussie. Bienvenue !",
+          "success"
         );
 
 
-        message.textContent =
-          "Connexion réussie. Redirection...";
+        setTimeout(
+          () => {
 
+            window.location.href =
+              "/dashboard.html";
 
-        /*
-        ================================
-        DASHBOARD
-        ================================
-        */
-
-        setTimeout(() => {
-
-          window.location.href =
-            "/dashboard.html";
-
-        }, 700);
+          },
+          600
+        );
 
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          error
+        );
 
-        message.textContent =
-          "Impossible de contacter le serveur.";
 
-      } finally {
-
-        button.disabled = false;
-
-        button.textContent =
-          "Se connecter";
+        showAuthMessage(
+          message,
+          error.message,
+          "error"
+        );
 
       }
 
     }
   );
 
-    }
+}
+
+
+/*
+========================================
+MESSAGE
+========================================
+*/
+
+function showAuthMessage(
+  element,
+  text,
+  type
+) {
+
+  if (!element)
+    return;
+
+
+  element.textContent =
+    text;
+
+
+  element.style.padding =
+    "12px 16px";
+
+
+  element.style.borderRadius =
+    "10px";
+
+
+  element.style.marginTop =
+    "15px";
+
+
+  if (type === "success") {
+
+    element.style.background =
+      "#ecfdf3";
+
+    element.style.color =
+      "#067647";
+
+  }
+
+
+  if (type === "error") {
+
+    element.style.background =
+      "#fef3f2";
+
+    element.style.color =
+      "#b42318";
+
+  }
+
+
+  if (type === "info") {
+
+    element.style.background =
+      "#eff8ff";
+
+    element.style.color =
+      "#175cd1";
+
+  }
+
+          }
