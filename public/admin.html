@@ -12,50 +12,257 @@
 
   <title>Administration — NOSMYBOOST🇧🇪</title>
 
+  <link
+    rel="stylesheet"
+    href="/css/style.css"
+  >
+
 </head>
+
 
 <body>
 
-  <header>
+  <!-- ================================
+       NAVBAR
+  ================================= -->
 
-    <h1>NOSMYBOOST🇧🇪 — Administration</h1>
+  <header class="navbar">
 
-    <button
-      id="logoutButton"
-      type="button"
-    >
-      Déconnexion
-    </button>
+    <div class="container nav-content">
+
+      <a
+        href="/dashboard.html"
+        class="logo"
+      >
+        NOSMYBOOST🇧🇪
+      </a>
+
+
+      <div class="nav-actions">
+
+        <span
+          id="adminName"
+          style="font-weight:700;"
+        >
+          Administration
+        </span>
+
+
+        <button
+          id="adminLogout"
+          type="button"
+          class="btn btn-outline"
+        >
+          Déconnexion
+        </button>
+
+      </div>
+
+    </div>
 
   </header>
 
 
+  <!-- ================================
+       ADMIN
+  ================================= -->
+
   <main>
 
-    <section>
+    <section class="features">
 
-      <h2>Dépôts en attente</h2>
+      <div class="container">
 
-      <p>
-        Vérifiez chaque paiement avant de créditer le compte du client.
-      </p>
 
-      <div id="pendingDeposits">
+        <div class="section-title">
 
-        <p>
-          Chargement des dépôts...
-        </p>
+          <span>
+            NOSMYBOOST🇧🇪
+          </span>
+
+          <h1>
+            Administration
+          </h1>
+
+          <p>
+            Gestion des dépôts et des commandes
+            de vos clients.
+          </p>
+
+        </div>
+
+
+        <!-- ==============================
+             STATISTIQUES
+        =============================== -->
+
+        <div
+          class="feature-grid"
+          style="
+            grid-template-columns:
+            repeat(3,1fr);
+            margin-bottom:35px;
+          "
+        >
+
+          <article class="feature-card">
+
+            <p
+              style="
+                color:#667085;
+              "
+            >
+              Dépôts en attente
+            </p>
+
+            <h2
+              id="pendingDepositsCount"
+            >
+              0
+            </h2>
+
+          </article>
+
+
+          <article class="feature-card">
+
+            <p
+              style="
+                color:#667085;
+              "
+            >
+              Commandes
+            </p>
+
+            <h2
+              id="ordersCount"
+            >
+              0
+            </h2>
+
+          </article>
+
+
+          <article class="feature-card">
+
+            <p
+              style="
+                color:#667085;
+              "
+            >
+              Statut
+            </p>
+
+            <h2>
+              🟢 En ligne
+            </h2>
+
+          </article>
+
+        </div>
+
+
+        <!-- ==============================
+             MESSAGE
+        =============================== -->
+
+        <div
+          id="adminMessage"
+          style="
+            margin-bottom:25px;
+            font-weight:600;
+          "
+        ></div>
+
+
+        <!-- ==============================
+             DÉPÔTS EN ATTENTE
+        =============================== -->
+
+        <section>
+
+          <div class="section-title">
+
+            <span>
+              FINANCES
+            </span>
+
+            <h2>
+              Dépôts en attente
+            </h2>
+
+            <p>
+              Vérifiez le paiement avant de
+              créditer le compte du client.
+            </p>
+
+          </div>
+
+
+          <div
+            id="pendingDeposits"
+            class="feature-grid"
+          >
+
+            <p
+              style="
+                grid-column:1/-1;
+                text-align:center;
+                color:#667085;
+              "
+            >
+              Chargement...
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <!-- ==============================
+             COMMANDES
+        =============================== -->
+
+        <section
+          style="
+            margin-top:70px;
+          "
+        >
+
+          <div class="section-title">
+
+            <span>
+              COMMANDES
+            </span>
+
+            <h2>
+              Dernières commandes
+            </h2>
+
+          </div>
+
+
+          <div
+            id="adminOrders"
+            class="feature-grid"
+          >
+
+            <p
+              style="
+                grid-column:1/-1;
+                text-align:center;
+                color:#667085;
+              "
+            >
+              Chargement...
+            </p>
+
+          </div>
+
+        </section>
+
 
       </div>
-
-    </section>
-
-
-    <section>
-
-      <h2>Message</h2>
-
-      <p id="adminMessage"></p>
 
     </section>
 
