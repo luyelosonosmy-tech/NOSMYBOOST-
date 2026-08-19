@@ -56,34 +56,25 @@ API
 ========================================
 */
 
-async function api(
-  url,
-  options = {}
-) {
+async function api(url, options = {}) {
 
   const response =
-    await fetch(
-      url,
-      {
-        ...options,
+    await fetch(url, {
+      ...options,
 
-        headers: {
-          "Content-Type":
-            "application/json",
+      headers: {
+        "Content-Type":
+          "application/json",
 
-          "Authorization":
-            `Bearer ${token}`,
+        "Authorization":
+          `Bearer ${token}`,
 
-          ...(options.headers || {})
-        }
+        ...(options.headers || {})
       }
-    );
-
+    });
 
   const data =
-    await response.json()
-      .catch(() => ({}));
-
+    await response.json().catch(() => ({}));
 
   if (
     response.status === 401 ||
@@ -100,9 +91,7 @@ async function api(
     throw new Error(
       "Session expirée."
     );
-
   }
-
 
   if (!response.ok) {
 
@@ -110,12 +99,9 @@ async function api(
       data.message ||
       "Une erreur est survenue."
     );
-
   }
 
-
   return data;
-
 }
 
 
@@ -139,18 +125,12 @@ async function loadServices() {
   try {
 
     const data =
-      await api(
-        "/api/services"
-      );
-
+      await api("/api/services");
 
     services =
-      data.services ||
-      [];
-
+      data.services || [];
 
     updateServiceList();
-
 
   } catch (error) {
 
@@ -159,14 +139,11 @@ async function loadServices() {
       error
     );
 
-
     showMessage(
       "Impossible de charger les services.",
       "error"
     );
-
   }
-
 }
 
 
@@ -181,81 +158,56 @@ function updateServiceList() {
   if (!serviceInput)
     return;
 
-
   const platform =
-    platformInput?.value;
-
+    platformInput?.value || "";
 
   serviceInput.innerHTML = `
-
     <option value="">
       Choisissez un service
     </option>
-
   `;
-
 
   serviceInput.disabled =
     !platform;
 
-
   if (!platform)
     return;
-
 
   const filtered =
     services.filter(
       service =>
-        String(
-          service.platform || ""
-        ).toLowerCase() ===
-        String(
-          platform
-        ).toLowerCase()
+        String(service.platform || "")
+          .toLowerCase() ===
+        String(platform)
+          .toLowerCase()
     );
 
+  filtered.forEach(service => {
 
-  filtered.forEach(
-    service => {
+    const option =
+      document.createElement("option");
 
-      const option =
-        document.createElement(
-          "option"
-        );
+    option.value =
+      service.id;
 
+    option.textContent =
+      `${service.name} — ${
+        formatMoney(service.price)
+      } CDF / 1000`;
 
-      option.value =
-        service.id;
-
-
-      option.textContent =
-        `${service.name} — ${
-          formatMoney(
-            service.rate
-          )
-        } CDF / 1000`;
-
-
-      serviceInput.appendChild(
-        option
-      );
-
-    }
-  );
-
+    serviceInput.appendChild(
+      option
+    );
+  });
 
   if (!filtered.length) {
 
     serviceInput.innerHTML = `
-
       <option value="">
         Aucun service disponible
       </option>
-
     `;
-
   }
-
 }
 
 
@@ -270,19 +222,14 @@ function getSelectedService() {
   const id =
     serviceInput?.value;
 
-
   if (!id)
     return null;
 
-
   return services.find(
     service =>
-      String(
-        service.id
-      ) ===
+      String(service.id) ===
       String(id)
   ) || null;
-
 }
 
 
@@ -297,12 +244,10 @@ function calculatePrice() {
   const service =
     getSelectedService();
 
-
   const quantity =
     Number(
       quantityInput?.value
     );
-
 
   if (
     !service ||
@@ -311,40 +256,28 @@ function calculatePrice() {
   ) {
 
     if (totalPrice) {
-
       totalPrice.textContent =
         "0 CDF";
-
     }
 
     return 0;
-
   }
 
-
   const rate =
-    Number(
-      service.rate || 0
-    );
-
+    Number(service.price || 0);
 
   const price =
     (quantity / 1000) *
     rate;
 
-
   if (totalPrice) {
 
     totalPrice.textContent =
-      formatMoney(
-        price
-      ) + " CDF";
-
+      formatMoney(price) +
+      " CDF";
   }
 
-
   return price;
-
 }
 
 
@@ -359,10 +292,8 @@ function updateQuantityInfo() {
   const service =
     getSelectedService();
 
-
   if (!quantityInfo)
     return;
-
 
   if (!service) {
 
@@ -370,27 +301,20 @@ function updateQuantityInfo() {
       "Choisissez un service pour voir les limites.";
 
     return;
-
   }
-
 
   const min =
     Number(
-      service.min || 1
+      service.min_quantity || 1
     );
-
 
   const max =
     Number(
-      service.max ||
-      service.maximum ||
-      1000000
+      service.max_quantity || 1000000
     );
-
 
   quantityInfo.textContent =
     `Minimum : ${formatMoney(min)} — Maximum : ${formatMoney(max)}`;
-
 }
 
 
@@ -418,10 +342,8 @@ if (platformInput) {
       }
 
       updateQuantityInfo();
-
     }
   );
-
 }
 
 
@@ -440,10 +362,8 @@ if (serviceInput) {
       updateQuantityInfo();
 
       calculatePrice();
-
     }
   );
-
 }
 
 
@@ -460,10 +380,8 @@ if (quantityInput) {
     () => {
 
       calculatePrice();
-
     }
   );
-
 }
 
 
@@ -478,24 +396,17 @@ async function loadBalance() {
   if (!currentBalance)
     return;
 
-
   try {
 
     const data =
-      await api(
-        "/api/auth/me"
-      );
-
+      await api("/api/auth/me");
 
     const balance =
       data.user?.balance || 0;
 
-
     currentBalance.textContent =
-      formatMoney(
-        balance
-      ) + " CDF";
-
+      formatMoney(balance) +
+      " CDF";
 
   } catch (error) {
 
@@ -504,12 +415,9 @@ async function loadBalance() {
       error
     );
 
-
     currentBalance.textContent =
       "—";
-
   }
-
 }
 
 
@@ -523,30 +431,21 @@ if (orderForm) {
 
   orderForm.addEventListener(
     "submit",
-    async (event) => {
+    async event => {
 
       event.preventDefault();
-
 
       const service =
         getSelectedService();
 
-
       const link =
         linkInput?.value.trim();
-
 
       const quantity =
         Number(
           quantityInput?.value
         );
 
-
-      /*
-      ==============================
-      VALIDATION SERVICE
-      ==============================
-      */
 
       if (!service) {
 
@@ -556,15 +455,8 @@ if (orderForm) {
         );
 
         return;
-
       }
 
-
-      /*
-      ==============================
-      VALIDATION LIEN
-      ==============================
-      */
 
       if (!link) {
 
@@ -574,18 +466,11 @@ if (orderForm) {
         );
 
         return;
-
       }
 
 
-      /*
-      ==============================
-      VALIDATION QUANTITÉ
-      ==============================
-      */
-
       if (
-        !Number.isFinite(quantity) ||
+        !Number.isInteger(quantity) ||
         quantity <= 0
       ) {
 
@@ -595,20 +480,17 @@ if (orderForm) {
         );
 
         return;
-
       }
 
 
       const min =
         Number(
-          service.min || 1
+          service.min_quantity || 1
         );
-
 
       const max =
         Number(
-          service.max ||
-          service.maximum ||
+          service.max_quantity ||
           1000000
         );
 
@@ -621,7 +503,6 @@ if (orderForm) {
         );
 
         return;
-
       }
 
 
@@ -633,15 +514,8 @@ if (orderForm) {
         );
 
         return;
-
       }
 
-
-      /*
-      ==============================
-      PRIX
-      ==============================
-      */
 
       const price =
         calculatePrice();
@@ -658,7 +532,6 @@ if (orderForm) {
         );
 
         return;
-
       }
 
 
@@ -677,12 +550,6 @@ if (orderForm) {
         );
 
 
-        /*
-        ==============================
-        API COMMANDE
-        ==============================
-        */
-
         const data =
           await api(
             "/api/orders",
@@ -700,7 +567,6 @@ if (orderForm) {
                   quantity
 
                 })
-
             }
           );
 
@@ -711,12 +577,6 @@ if (orderForm) {
           "success"
         );
 
-
-        /*
-        ==============================
-        RESET
-        ==============================
-        */
 
         orderForm.reset();
 
@@ -740,7 +600,6 @@ if (orderForm) {
           error
         );
 
-
         showMessage(
           error.message,
           "error"
@@ -754,12 +613,9 @@ if (orderForm) {
 
         orderButton.textContent =
           "🛒 Commander maintenant";
-
       }
-
     }
   );
-
 }
 
 
@@ -769,18 +625,13 @@ MESSAGE
 ========================================
 */
 
-function showMessage(
-  text,
-  type
-) {
+function showMessage(text, type) {
 
   if (!orderMessage)
     return;
 
-
   orderMessage.textContent =
     text;
-
 
   orderMessage.style.padding =
     "12px 16px";
@@ -799,7 +650,6 @@ function showMessage(
 
     orderMessage.style.color =
       "#067647";
-
   }
 
 
@@ -810,7 +660,6 @@ function showMessage(
 
     orderMessage.style.color =
       "#b42318";
-
   }
 
 
@@ -821,9 +670,7 @@ function showMessage(
 
     orderMessage.style.color =
       "#175cd1";
-
   }
-
 }
 
 
@@ -833,9 +680,7 @@ FORMAT ARGENT
 ========================================
 */
 
-function formatMoney(
-  amount
-) {
+function formatMoney(amount) {
 
   return Number(
     amount || 0
@@ -846,7 +691,6 @@ function formatMoney(
       maximumFractionDigits: 2
     }
   );
-
 }
 
 
@@ -861,8 +705,6 @@ async function initOrder() {
   await loadBalance();
 
   await loadServices();
-
 }
-
 
 initOrder();
