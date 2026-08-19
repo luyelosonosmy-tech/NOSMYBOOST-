@@ -1,19 +1,116 @@
-/*
-========================================
-NOSMYBOOST 🇧🇪
-SYNCHRONISATION SERVICES SMM AFRICA
-========================================
-*/
+"use strict";
 
 require("dotenv").config();
 
-const db =
-  require("../database/database");
+const db = require("../database/database");
 
-const {
-  getServices
-} =
-  require("../services/smm-africa");
+const SMM_API_URL =
+  process.env.SMM_API_URL ||
+  "https://smm.africa/api/v3";
+
+const SMM_API_KEY =
+  process.env.SMM_API_KEY;
+
+
+/*
+========================================
+APPEL SMM AFRICA
+========================================
+*/
+
+async function smmAfricaRequest(payload) {
+
+  if (!SMM_API_KEY) {
+
+    throw new Error(
+      "SMM_API_KEY manquante dans .env"
+    );
+
+  }
+
+  const response =
+    await fetch(
+      SMM_API_URL,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          "Authorization":
+            `Bearer ${SMM_API_KEY}`
+        },
+
+        body:
+          JSON.stringify(payload)
+      }
+    );
+
+
+  const data =
+    await response
+      .json()
+      .catch(() => ({}));
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.error ||
+      `SMM Africa HTTP ${response.status}`
+    );
+
+  }
+
+
+  if (data.error) {
+
+    throw new Error(
+      data.error
+    );
+
+  }
+
+
+  return data;
+}
+
+
+/*
+========================================
+DÉTERMINER LA PLATEFORME
+========================================
+*/
+
+function detectPlatform(name) {
+
+  const text =
+    String(name || "")
+      .toLowerCase();
+
+
+  if (text.includes("facebook"))
+    return "Facebook";
+
+  if (text.includes("tiktok"))
+    return "TikTok";
+
+  if (text.includes("instagram"))
+    return "Instagram";
+
+  if (text.includes("youtube"))
+    return "YouTube";
+
+  if (text.includes("telegram"))
+    return "Telegram";
+
+  if (text.includes("twitter") ||
+      text.includes("x.com"))
+    return "Twitter";
+
+  return "Autres";
+}
 
 
 /*
@@ -24,309 +121,413 @@ SYNCHRONISATION
 
 async function syncServices() {
 
+  console.log("");
   console.log(
-    "🔄 Récupération des services SMM Africa..."
+    "========================================"
   );
-
-
-  try {
-
-    const services =
-      await getServices();
-
-
-    if (!Array.isArray(services)) {
-
-      console.error(
-        "❌ Réponse services invalide :",
-        services
-      );
-
-      return;
-
-    }
-
-
-    console.log(
-      `✅ ${services.length} services reçus.`
-    );
-
-
-    let count = 0;
-
-
-    for (
-      const service of services
-    ) {
-
-      const providerId =
-        String(
-          service.service || ""
-        ).trim();
-
-
-      const name =
-        String(
-          service.name || ""
-        ).trim();
-
-
-      const rate =
-        Number(
-          service.rate || 0
-        );
-
-
-      const min =
-        Number(
-          service.min || 1
-        );
-
-
-      const max =
-        Number(
-          service.max || 1000000
-        );
-
-
-      const category =
-        String(
-          service.category || ""
-        );
-
-
-      if (
-        !providerId ||
-        !name ||
-        !Number.isFinite(rate)
-      ) {
-
-        continue;
-
-      }
-
-
-      /*
-      ==================================
-      DÉTERMINER PLATEFORME
-      ==================================
-      */
-
-      let platform =
-        "Autres";
-
-
-      const text =
-        `${category} ${name}`
-          .toLowerCase();
-
-
-      if (
-        text.includes("facebook")
-      ) {
-
-        platform =
-          "Facebook";
-
-      }
-
-      else if (
-        text.includes("instagram")
-      ) {
-
-        platform =
-          "Instagram";
-
-      }
-
-      else if (
-        text.includes("tiktok")
-      ) {
-
-        platform =
-          "TikTok";
-
-      }
-
-      else if (
-        text.includes("youtube")
-      ) {
-
-        platform =
-          "YouTube";
-
-      }
-
-      else if (
-        text.includes("telegram")
-      ) {
-
-        platform =
-          "Telegram";
-
-      }
-
-      else if (
-        text.includes("twitter") ||
-        text.includes("x.com")
-      ) {
-
-        platform =
-          "Twitter";
-
-      }
-
-
-      /*
-      ==================================
-      PRIX CLIENT
-      ==================================
-      
-      rate = prix fournisseur USD / 1000
-      
-      Ici on convertit USD → CDF
-      puis on applique une marge.
-      ==================================
-      */
-
-      const usdToCdf =
-        Number(
-          process.env.USD_TO_CDF || 2800
-        );
-
-
-      const margin =
-        1.5;
-
-
-      const price =
-        Number(
-          (
-            rate *
-            usdToCdf *
-            margin
-          ).toFixed(2)
-        );
-
-
-      /*
-      ==================================
-      INSERT / UPDATE
-      ==================================
-      */
-
-      await new Promise(
-        (resolve, reject) => {
-
-          db.run(
-            `
-            INSERT INTO services
-            (
-              platform,
-              name,
-              description,
-              price,
-              min_quantity,
-              max_quantity,
-              provider,
-              provider_service_id,
-              active
-            )
-
-            VALUES
-            (
-              ?,
-              ?,
-              ?,
-              ?,
-              ?,
-              ?,
-              'smm.africa',
-              ?,
-              1
-            )
-
-            ON CONFLICT(provider_service_id)
-            DO UPDATE SET
-
-              platform =
-                excluded.platform,
-
-              name =
-                excluded.name,
-
-              description =
-                excluded.description,
-
-              min_quantity =
-                excluded.min_quantity,
-
-              max_quantity =
-                excluded.max_quantity,
-
-              provider =
-                excluded.provider,
-
-              active =
-                1
-            `,
-
-            [
-              platform,
-
-              name,
-
-              service.description ||
-                "",
-
-              price,
-
-              min,
-
-              max,
-
-              providerId
-            ],
-
-            error => {
-
-              if (error) {
-
-                reject(error);
-
-              }
-
-              else {
-
-                count++;
-
-                resolve();
-
-              }
-
-            }
-          );
-
-        }
-      );
-
-    }
-
-
-    console.log(
-      `✅ ${count} services synchronisés.`
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      "❌ Synchronisation SMM Africa échouée:",
-      error.message
+  console.log(
+    "NOSMYBOOST - SYNCHRONISATION SMM AFRICA"
+  );
+  console.log(
+    "========================================"
+  );
+  console.log("");
+
+
+  /*
+  RÉCUPÉRER LE CATALOGUE
+  */
+
+  const providerServices =
+    await smmAfricaRequest({
+      action: "services"
+    });
+
+
+  if (
+    !Array.isArray(providerServices)
+  ) {
+
+    throw new Error(
+      "SMM Africa n'a pas retourné une liste de services."
     );
 
   }
 
+
+  console.log(
+    `Services reçus : ${providerServices.length}`
+  );
+
+
+  let imported = 0;
+  let updated = 0;
+  let skipped = 0;
+
+
+  /*
+  ========================================
+  TRANSACTION
+  ========================================
+  */
+
+  await new Promise(
+    (resolve, reject) => {
+
+      db.serialize(() => {
+
+        db.run(
+          "BEGIN TRANSACTION",
+          error => {
+
+            if (error)
+              return reject(error);
+
+
+            /*
+            ==================================
+            TRAITER CHAQUE SERVICE
+            ==================================
+            */
+
+            let index = 0;
+
+
+            function next() {
+
+              if (
+                index >=
+                providerServices.length
+              ) {
+
+                return db.run(
+                  "COMMIT",
+                  commitError => {
+
+                    if (commitError)
+                      return reject(
+                        commitError
+                      );
+
+                    resolve();
+
+                  }
+                );
+
+              }
+
+
+              const service =
+                providerServices[index++];
+
+
+              const providerId =
+                Number(
+                  service.service
+                );
+
+
+              const name =
+                String(
+                  service.name || ""
+                ).trim();
+
+
+              const priceUSD =
+                Number(
+                  service.rate
+                );
+
+
+              const min =
+                Number(
+                  service.min
+                );
+
+
+              const max =
+                Number(
+                  service.max
+                );
+
+
+              /*
+              ==================================
+              VALIDATION
+              ==================================
+              */
+
+              if (
+                !Number.isInteger(
+                  providerId
+                ) ||
+                !name ||
+                !Number.isFinite(
+                  priceUSD
+                ) ||
+                !Number.isFinite(min) ||
+                !Number.isFinite(max)
+              ) {
+
+                skipped++;
+
+                return next();
+
+              }
+
+
+              /*
+              ==================================
+              PLATEFORME
+              ==================================
+              */
+
+              const platform =
+                detectPlatform(name);
+
+
+              /*
+              ==================================
+              PRIX NOSMYBOOST
+              ==================================
+
+              SMM Africa donne le tarif
+              en USD.
+
+              Exemple :
+              rate = 0.90 USD / 1000
+
+              USD_TO_CDF = 2800
+
+              coût fournisseur :
+              0.90 × 2800 = 2520 CDF
+
+              On ajoute ensuite une marge.
+              */
+
+              const usdToCdf =
+                Number(
+                  process.env.USD_TO_CDF ||
+                  2800
+                );
+
+
+              const providerPriceCDF =
+                priceUSD *
+                usdToCdf;
+
+
+              /*
+              Marge NOSMYBOOST
+              */
+
+              const margin =
+                Number(
+                  process.env.SMM_MARGIN ||
+                  30
+                );
+
+
+              const clientPrice =
+                providerPriceCDF *
+                (1 + margin / 100);
+
+
+              const finalPrice =
+                Number(
+                  clientPrice.toFixed(2)
+                );
+
+
+              /*
+              ==================================
+              VÉRIFIER SI LE SERVICE EXISTE
+              ==================================
+              */
+
+              db.get(
+                `
+                SELECT id
+                FROM services
+                WHERE provider = ?
+                  AND provider_service_id = ?
+                `,
+                [
+                  "SMM Africa",
+                  String(providerId)
+                ],
+                (findError, existing) => {
+
+                  if (findError) {
+
+                    return reject(
+                      findError
+                    );
+
+                  }
+
+
+                  /*
+                  ==================================
+                  MISE À JOUR
+                  ==================================
+                  */
+
+                  if (existing) {
+
+                    db.run(
+                      `
+                      UPDATE services
+
+                      SET
+                        platform = ?,
+                        name = ?,
+                        description = ?,
+                        price = ?,
+                        min_quantity = ?,
+                        max_quantity = ?,
+                        active = 1
+
+                      WHERE id = ?
+                      `,
+                      [
+                        platform,
+                        name,
+                        String(
+                          service.description ||
+                          ""
+                        ),
+                        finalPrice,
+                        min,
+                        max,
+                        existing.id
+                      ],
+                      updateError => {
+
+                        if (updateError)
+                          return reject(
+                            updateError
+                          );
+
+                        updated++;
+
+                        next();
+
+                      }
+                    );
+
+                    return;
+                  }
+
+
+                  /*
+                  ==================================
+                  NOUVEAU SERVICE
+                  ==================================
+                  */
+
+                  db.run(
+                    `
+                    INSERT INTO services
+                    (
+                      platform,
+                      name,
+                      description,
+                      price,
+                      min_quantity,
+                      max_quantity,
+                      provider,
+                      provider_service_id,
+                      active
+                    )
+
+                    VALUES
+                    (
+                      ?,
+                      ?,
+                      ?,
+                      ?,
+                      ?,
+                      ?,
+                      ?,
+                      ?,
+                      1
+                    )
+                    `,
+                    [
+                      platform,
+                      name,
+                      String(
+                        service.description ||
+                        ""
+                      ),
+                      finalPrice,
+                      min,
+                      max,
+                      "SMM Africa",
+                      String(providerId)
+                    ],
+                    insertError => {
+
+                      if (insertError)
+                        return reject(
+                          insertError
+                        );
+
+                      imported++;
+
+                      next();
+
+                    }
+                  );
+
+                }
+              );
+
+            }
+
+
+            next();
+
+          }
+        );
+
+      });
+
+    }
+  );
+
+
+  /*
+  ========================================
+  RÉSULTAT
+  ========================================
+  */
+
+  console.log("");
+  console.log(
+    "========================================"
+  );
+  console.log(
+    "SYNCHRONISATION TERMINÉE"
+  );
+  console.log(
+    "========================================"
+  );
+
+  console.log(
+    `Nouveaux services : ${imported}`
+  );
+
+  console.log(
+    `Services mis à jour : ${updated}`
+  );
+
+  console.log(
+    `Services ignorés : ${skipped}`
+  );
+
+  console.log("");
 }
 
 
@@ -337,8 +538,17 @@ LANCEMENT
 */
 
 syncServices()
-  .then(() => {
+  .catch(error => {
 
-    db.close();
+    console.error("");
+    console.error(
+      "❌ SYNCHRONISATION ÉCHOUÉE"
+    );
+
+    console.error(
+      error.message
+    );
+
+    process.exit(1);
 
   });
