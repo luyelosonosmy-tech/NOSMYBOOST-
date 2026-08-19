@@ -3,6 +3,7 @@ const db = require("../database/database");
 const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
+
 const MIN_DEPOSIT = 2500;
 
 const PAYMENT_METHODS = [
@@ -11,10 +12,9 @@ const PAYMENT_METHODS = [
   "orange"
 ];
 
-
 /*
 ========================================
-CRÉER UNE DEMANDE DE DÉPÔT
+ CRÉER UNE DEMANDE DE DÉPÔT
 ========================================
 */
 
@@ -35,28 +35,48 @@ router.post("/", authenticateToken, (req, res) => {
   ).trim();
 
 
+  /*
+  ==============================
+  MONTANT
+  ==============================
+  */
+
   if (
     !Number.isFinite(amount) ||
-    amount <= 0
+    amount < MIN_DEPOSIT
   ) {
 
     return res.status(400).json({
       success: false,
-      message: "Montant invalide."
+      message:
+        `Le dépôt minimum est de ${MIN_DEPOSIT} CDF.`
     });
 
   }
 
+
+  /*
+  ==============================
+  MOYEN DE PAIEMENT
+  ==============================
+  */
 
   if (!PAYMENT_METHODS.includes(method)) {
 
     return res.status(400).json({
       success: false,
-      message: "Moyen de paiement invalide."
+      message:
+        "Moyen de paiement invalide."
     });
 
   }
 
+
+  /*
+  ==============================
+  PREUVE / RÉFÉRENCE
+  ==============================
+  */
 
   if (!proof) {
 
@@ -68,6 +88,12 @@ router.post("/", authenticateToken, (req, res) => {
 
   }
 
+
+  /*
+  ==============================
+  ENREGISTRER LE DÉPÔT
+  ==============================
+  */
 
   db.run(
     `
@@ -116,6 +142,10 @@ router.post("/", authenticateToken, (req, res) => {
         depositId:
           this.lastID,
 
+        amount,
+
+        method,
+
         status:
           "pending"
 
@@ -129,7 +159,7 @@ router.post("/", authenticateToken, (req, res) => {
 
 /*
 ========================================
-MES DÉPÔTS
+ MES DÉPÔTS
 ========================================
 */
 
@@ -138,7 +168,8 @@ router.get(
   authenticateToken,
   (req, res) => {
 
-    const userId = req.user.id;
+    const userId =
+      req.user.id;
 
 
     db.all(
@@ -150,11 +181,8 @@ router.get(
         proof,
         status,
         created_at
-
       FROM deposits
-
       WHERE user_id = ?
-
       ORDER BY id DESC
       `,
       [userId],
