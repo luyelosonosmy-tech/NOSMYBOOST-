@@ -8,18 +8,8 @@ ADMIN JAVASCRIPT
 const token =
   localStorage.getItem("nosmyboost_token");
 
-
-/*
-========================================
-VÉRIFIER SESSION
-========================================
-*/
-
 if (!token) {
-
-  window.location.href =
-    "/login.html";
-
+  window.location.href = "/login.html";
 }
 
 
@@ -29,87 +19,28 @@ if (!token) {
 ========================================
 */
 
-const message =
-  document.getElementById(
-    "adminMessage"
-  );
+const adminName =
+  document.getElementById("adminName");
 
-const depositsContainer =
-  document.getElementById(
-    "pendingDeposits"
-  );
+const adminLogout =
+  document.getElementById("adminLogout");
 
-const depositsCount =
+const pendingDeposits =
+  document.getElementById("pendingDeposits");
+
+const pendingDepositsCount =
   document.getElementById(
     "pendingDepositsCount"
   );
 
-const ordersContainer =
-  document.getElementById(
-    "adminOrders"
-  );
+const adminOrders =
+  document.getElementById("adminOrders");
 
-const adminName =
-  document.getElementById(
-    "adminName"
-  );
+const ordersCount =
+  document.getElementById("ordersCount");
 
-
-/*
-========================================
-MESSAGE
-========================================
-*/
-
-function showMessage(
-  text,
-  type = "info"
-) {
-
-  if (!message) return;
-
-  message.textContent = text;
-
-  message.style.padding =
-    "12px 16px";
-
-  message.style.borderRadius =
-    "10px";
-
-
-  if (type === "success") {
-
-    message.style.background =
-      "#ecfdf3";
-
-    message.style.color =
-      "#067647";
-
-  }
-
-
-  if (type === "error") {
-
-    message.style.background =
-      "#fef3f2";
-
-    message.style.color =
-      "#b42318";
-
-  }
-
-
-  if (type === "info") {
-
-    message.style.background =
-      "#eff8ff";
-
-    message.style.color =
-      "#175cd3";
-
-  }
-
-}
+const adminMessage =
+  document.getElementById("adminMessage");
 
 
 /*
@@ -118,28 +49,25 @@ API
 ========================================
 */
 
-async function api(
-  url,
-  options = {}
-) {
+async function api(url, options = {}) {
 
-  const response =
-    await fetch(
-      url,
-      {
-        ...options,
+  const response = await fetch(url, {
 
-        headers: {
-          "Content-Type":
-            "application/json",
+    ...options,
 
-          "Authorization":
-            `Bearer ${token}`,
+    headers: {
 
-          ...(options.headers || {})
-        }
-      }
-    );
+      "Content-Type":
+        "application/json",
+
+      "Authorization":
+        `Bearer ${token}`,
+
+      ...(options.headers || {})
+
+    }
+
+  });
 
 
   const data =
@@ -161,7 +89,7 @@ async function api(
 
     throw new Error(
       data.message ||
-      "Accès refusé."
+      "Accès administrateur refusé."
     );
 
   }
@@ -171,7 +99,7 @@ async function api(
 
     throw new Error(
       data.message ||
-      "Une erreur est survenue."
+      "Erreur serveur."
     );
 
   }
@@ -184,65 +112,11 @@ async function api(
 
 /*
 ========================================
-CHARGER PROFIL ADMIN
+CHARGER DÉPÔTS EN ATTENTE
 ========================================
 */
 
-async function loadAdminProfile() {
-
-  try {
-
-    const data =
-      await api(
-        "/api/auth/me"
-      );
-
-
-    if (adminName) {
-
-      adminName.textContent =
-        data.user.name ||
-        data.user.email;
-
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      error
-    );
-
-  }
-
-}
-
-
-/*
-========================================
-CHARGER DÉPÔTS
-========================================
-*/
-
-async function loadDeposits() {
-
-  if (!depositsContainer)
-    return;
-
-
-  depositsContainer.innerHTML =
-    `
-      <p
-        style="
-          grid-column:1/-1;
-          text-align:center;
-          color:#667085;
-        "
-      >
-        Chargement...
-      </p>
-    `;
-
+async function loadPendingDeposits() {
 
   try {
 
@@ -256,9 +130,9 @@ async function loadDeposits() {
       data.deposits || [];
 
 
-    if (depositsCount) {
+    if (pendingDepositsCount) {
 
-      depositsCount.textContent =
+      pendingDepositsCount.textContent =
         deposits.length;
 
     }
@@ -266,35 +140,33 @@ async function loadDeposits() {
 
     if (!deposits.length) {
 
-      depositsContainer.innerHTML =
-        `
-          <p
-            style="
-              grid-column:1/-1;
-              text-align:center;
-              color:#667085;
-            "
-          >
-            Aucun dépôt en attente.
-          </p>
-        `;
+      pendingDeposits.innerHTML = `
+
+        <p style="
+          grid-column:1/-1;
+          text-align:center;
+          color:#667085;
+        ">
+
+          ✅ Aucun dépôt en attente.
+
+        </p>
+
+      `;
 
       return;
 
     }
 
 
-    depositsContainer.innerHTML =
-      "";
+    pendingDeposits.innerHTML = "";
 
 
     deposits.forEach(
       deposit => {
 
         const card =
-          document.createElement(
-            "article"
-          );
+          document.createElement("article");
 
 
         card.className =
@@ -303,72 +175,79 @@ async function loadDeposits() {
 
         card.innerHTML = `
 
-          <h3>
-            Dépôt #${deposit.id}
-          </h3>
+          <p>
+            <strong>
+              Dépôt #${deposit.id}
+            </strong>
+          </p>
 
           <p>
-            <strong>Client :</strong>
+            Client :
             ${escapeHtml(
-              deposit.name || "-"
+              deposit.name || "—"
             )}
           </p>
 
           <p>
-            <strong>Email :</strong>
+            Email :
             ${escapeHtml(
-              deposit.email || "-"
+              deposit.email || "—"
             )}
           </p>
 
           <p>
-            <strong>WhatsApp :</strong>
+            WhatsApp :
             ${escapeHtml(
-              deposit.whatsapp || "-"
+              deposit.whatsapp || "—"
             )}
           </p>
 
           <p>
-            <strong>Montant :</strong>
-            ${formatMoney(
-              deposit.amount
-            )}
-            CDF
+            Moyen :
+            <strong>
+              ${formatMethod(
+                deposit.method
+              )}
+            </strong>
           </p>
 
           <p>
-            <strong>Moyen :</strong>
-            ${formatMethod(
-              deposit.method
-            )}
+            Montant :
+            <strong>
+              ${formatMoney(
+                deposit.amount
+              )} CDF
+            </strong>
           </p>
 
           <p>
-            <strong>Preuve :</strong>
+            Référence :
+            <strong>
+              ${escapeHtml(
+                deposit.proof || "—"
+              )}
+            </strong>
+          </p>
+
+          <p>
+            Date :
             ${escapeHtml(
-              deposit.proof || "-"
+              deposit.created_at || "—"
             )}
           </p>
 
-          <p>
-            <strong>Statut :</strong>
-            ⏳ En attente
-          </p>
 
-          <div
-            style="
-              display:flex;
-              gap:10px;
-              margin-top:20px;
-              flex-wrap:wrap;
-            "
-          >
+          <div style="
+            display:flex;
+            gap:10px;
+            margin-top:20px;
+            flex-wrap:wrap;
+          ">
 
             <button
               type="button"
-              class="btn"
-              data-action="approve"
-              data-id="${deposit.id}"
+              class="btn btn-primary"
+              onclick="approveDeposit(${deposit.id})"
             >
               ✅ Valider
             </button>
@@ -376,8 +255,7 @@ async function loadDeposits() {
             <button
               type="button"
               class="btn btn-outline"
-              data-action="reject"
-              data-id="${deposit.id}"
+              onclick="rejectDeposit(${deposit.id})"
             >
               ❌ Refuser
             </button>
@@ -387,7 +265,7 @@ async function loadDeposits() {
         `;
 
 
-        depositsContainer.appendChild(
+        pendingDeposits.appendChild(
           card
         );
 
@@ -397,25 +275,13 @@ async function loadDeposits() {
 
   } catch (error) {
 
-    console.error(
-      error
+    console.error(error);
+
+
+    showMessage(
+      error.message,
+      "error"
     );
-
-
-    depositsContainer.innerHTML =
-      `
-        <p
-          style="
-            grid-column:1/-1;
-            text-align:center;
-            color:#b42318;
-          "
-        >
-          ${escapeHtml(
-            error.message
-          )}
-        </p>
-      `;
 
   }
 
@@ -429,12 +295,12 @@ VALIDER DÉPÔT
 */
 
 async function approveDeposit(
-  id
+  depositId
 ) {
 
   const confirmed =
     window.confirm(
-      `Voulez-vous vraiment valider le dépôt #${id} ?`
+      "Confirmer la validation de ce dépôt ? Le montant sera crédité sur le compte du client."
     );
 
 
@@ -445,35 +311,31 @@ async function approveDeposit(
   try {
 
     showMessage(
-      "Validation du dépôt...",
+      "Validation en cours...",
       "info"
     );
 
 
-    const data =
-      await api(
-        `/api/admin/deposits/${id}/approve`,
-        {
-          method: "POST"
-        }
-      );
+    await api(
+      `/api/admin/deposits/${depositId}/approve`,
+      {
+        method: "POST"
+      }
+    );
 
 
     showMessage(
-      data.message ||
-      "Dépôt validé.",
+      "✅ Dépôt validé et compte client crédité.",
       "success"
     );
 
 
-    await loadDeposits();
+    await loadPendingDeposits();
 
 
   } catch (error) {
 
-    console.error(
-      error
-    );
+    console.error(error);
 
 
     showMessage(
@@ -493,12 +355,12 @@ REFUSER DÉPÔT
 */
 
 async function rejectDeposit(
-  id
+  depositId
 ) {
 
   const confirmed =
     window.confirm(
-      `Voulez-vous vraiment refuser le dépôt #${id} ?`
+      "Confirmer le refus de ce dépôt ?"
     );
 
 
@@ -509,35 +371,31 @@ async function rejectDeposit(
   try {
 
     showMessage(
-      "Refus du dépôt...",
+      "Refus en cours...",
       "info"
     );
 
 
-    const data =
-      await api(
-        `/api/admin/deposits/${id}/reject`,
-        {
-          method: "POST"
-        }
-      );
+    await api(
+      `/api/admin/deposits/${depositId}/reject`,
+      {
+        method: "POST"
+      }
+    );
 
 
     showMessage(
-      data.message ||
-      "Dépôt refusé.",
+      "❌ Dépôt refusé.",
       "success"
     );
 
 
-    await loadDeposits();
+    await loadPendingDeposits();
 
 
   } catch (error) {
 
-    console.error(
-      error
-    );
+    console.error(error);
 
 
     showMessage(
@@ -554,120 +412,283 @@ async function rejectDeposit(
 ========================================
 COMMANDES ADMIN
 ========================================
-
-Pour cette étape, on affiche simplement
-un message. On créera ensuite une vraie
-route admin/orders.
-========================================
 */
 
 async function loadOrders() {
 
-  if (!ordersContainer)
+  if (!adminOrders)
     return;
 
 
-  ordersContainer.innerHTML =
-    `
-      <p
-        style="
+  try {
+
+    const data =
+      await api(
+        "/api/admin/orders"
+      );
+
+
+    const orders =
+      data.orders || [];
+
+
+    if (ordersCount) {
+
+      ordersCount.textContent =
+        orders.length;
+
+    }
+
+
+    if (!orders.length) {
+
+      adminOrders.innerHTML = `
+
+        <p style="
           grid-column:1/-1;
           text-align:center;
           color:#667085;
-        "
-      >
-        La gestion complète des commandes
-        sera activée dans l'étape suivante.
+        ">
+
+          📦 Aucune commande.
+
+        </p>
+
+      `;
+
+      return;
+
+    }
+
+
+    adminOrders.innerHTML = "";
+
+
+    orders.slice(0, 20).forEach(
+      order => {
+
+        const card =
+          document.createElement("article");
+
+
+        card.className =
+          "feature-card";
+
+
+        card.innerHTML = `
+
+          <p>
+            <strong>
+              Commande #${order.id}
+            </strong>
+          </p>
+
+          <p>
+            Client :
+            ${escapeHtml(
+              order.user_name || "—"
+            )}
+          </p>
+
+          <p>
+            Service :
+            ${escapeHtml(
+              order.service_name || "—"
+            )}
+          </p>
+
+          <p>
+            Quantité :
+            ${formatMoney(
+              order.quantity
+            )}
+          </p>
+
+          <p>
+            Montant :
+            <strong>
+              ${formatMoney(
+                order.price
+              )} CDF
+            </strong>
+          </p>
+
+          <p>
+            Statut :
+            <strong>
+              ${formatStatus(
+                order.status
+              )}
+            </strong>
+          </p>
+
+        `;
+
+
+        adminOrders.appendChild(
+          card
+        );
+
+      }
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Admin orders:",
+      error
+    );
+
+
+    adminOrders.innerHTML = `
+
+      <p style="
+        grid-column:1/-1;
+        text-align:center;
+        color:#b42318;
+      ">
+
+        Impossible de charger les commandes.
+
       </p>
+
     `;
 
+  }
+
 }
 
 
 /*
 ========================================
-ACTIONS DES BOUTONS
+MESSAGE ADMIN
 ========================================
 */
 
-document.addEventListener(
-  "click",
-  event => {
+function showMessage(
+  message,
+  type
+) {
 
-    const button =
-      event.target.closest(
-        "button[data-action]"
-      );
-
-
-    if (!button)
-      return;
+  if (!adminMessage)
+    return;
 
 
-    const id =
-      Number(
-        button.dataset.id
-      );
+  adminMessage.textContent =
+    message;
 
 
-    if (
-      !Number.isInteger(id) ||
-      id <= 0
-    ) {
+  if (type === "success") {
 
-      return;
-
-    }
-
-
-    if (
-      button.dataset.action ===
-      "approve"
-    ) {
-
-      approveDeposit(id);
-
-    }
-
-
-    if (
-      button.dataset.action ===
-      "reject"
-    ) {
-
-      rejectDeposit(id);
-
-    }
+    adminMessage.style.color =
+      "#067647";
 
   }
-);
+
+  else if (type === "error") {
+
+    adminMessage.style.color =
+      "#b42318";
+
+  }
+
+  else {
+
+    adminMessage.style.color =
+      "#175cd1";
+
+  }
+
+}
 
 
 /*
 ========================================
-DÉCONNEXION
+MOYEN DE PAIEMENT
 ========================================
 */
 
-const logoutButton =
-  document.getElementById(
-    "adminLogout"
-  );
+function formatMethod(
+  method
+) {
+
+  const methods = {
+
+    airtel:
+      "🔴 Airtel Money",
+
+    mpesa:
+      "🟢 Vodacom M-Pesa",
+
+    orange:
+      "🟠 Orange Money"
+
+  };
 
 
-if (logoutButton) {
+  return methods[
+    String(method || "")
+      .toLowerCase()
+  ] || method || "—";
 
-  logoutButton.addEventListener(
-    "click",
-    () => {
+}
 
-      localStorage.removeItem(
-        "nosmyboost_token"
-      );
 
-      window.location.href =
-        "/login.html";
+/*
+========================================
+STATUT
+========================================
+*/
 
+function formatStatus(
+  status
+) {
+
+  const statuses = {
+
+    pending:
+      "⏳ En attente",
+
+    processing:
+      "🔄 En cours",
+
+    completed:
+      "✅ Terminé",
+
+    cancelled:
+      "❌ Annulé",
+
+    rejected:
+      "❌ Refusé"
+
+  };
+
+
+  return statuses[
+    String(status || "")
+      .toLowerCase()
+  ] || status || "—";
+
+}
+
+
+/*
+========================================
+ARGENT
+========================================
+*/
+
+function formatMoney(
+  amount
+) {
+
+  return Number(
+    amount || 0
+  ).toLocaleString(
+    "fr-FR",
+    {
+      maximumFractionDigits: 2
     }
   );
 
@@ -676,13 +697,17 @@ if (logoutButton) {
 
 /*
 ========================================
-SÉCURITÉ AFFICHAGE
+SÉCURITÉ HTML
 ========================================
 */
 
-function escapeHtml(value) {
+function escapeHtml(
+  value
+) {
 
-  return String(value ?? "")
+  return String(
+    value ?? ""
+  )
     .replace(
       /&/g,
       "&amp;"
@@ -709,55 +734,25 @@ function escapeHtml(value) {
 
 /*
 ========================================
-FORMAT MONNAIE
+DÉCONNEXION
 ========================================
 */
 
-function formatMoney(
-  amount
-) {
+if (adminLogout) {
 
-  return Number(
-    amount || 0
-  ).toLocaleString(
-    "fr-FR",
-    {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
+  adminLogout.addEventListener(
+    "click",
+    () => {
+
+      localStorage.removeItem(
+        "nosmyboost_token"
+      );
+
+      window.location.href =
+        "/login.html";
+
     }
   );
-
-}
-
-
-/*
-========================================
-FORMAT PAIEMENT
-========================================
-*/
-
-function formatMethod(
-  method
-) {
-
-  const methods = {
-
-    airtel:
-      "Airtel Money",
-
-    mpesa:
-      "Vodacom M-Pesa",
-
-    orange:
-      "Orange Money"
-
-  };
-
-
-  return methods[
-    String(method || "")
-      .toLowerCase()
-  ] || method;
 
 }
 
@@ -770,9 +765,7 @@ DÉMARRAGE
 
 async function initAdmin() {
 
-  await loadAdminProfile();
-
-  await loadDeposits();
+  await loadPendingDeposits();
 
   await loadOrders();
 
