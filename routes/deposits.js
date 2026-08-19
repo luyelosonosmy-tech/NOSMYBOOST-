@@ -3,6 +3,7 @@ const db = require("../database/database");
 const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
+const MIN_DEPOSIT = 2500;
 
 const PAYMENT_METHODS = [
   "airtel",
