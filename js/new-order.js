@@ -5,8 +5,15 @@ NEW ORDER JAVASCRIPT
 ========================================
 */
 
-const token =
-  localStorage.getItem("nosmyboost_token");
+"use strict";
+
+/*
+========================================
+AUTHENTIFICATION
+========================================
+*/
+
+const token = localStorage.getItem("nosmyboost_token");
 
 if (!token) {
   window.location.href = "/login.html";
@@ -19,35 +26,25 @@ if (!token) {
 ========================================
 */
 
-const orderForm =
-  document.getElementById("orderForm");
+const orderForm = document.getElementById("orderForm");
+const platformInput = document.getElementById("platform");
+const serviceInput = document.getElementById("service");
+const linkInput = document.getElementById("link");
+const quantityInput = document.getElementById("quantity");
+const totalPrice = document.getElementById("totalPrice");
+const currentBalance = document.getElementById("currentBalance");
+const orderMessage = document.getElementById("orderMessage");
+const orderButton = document.getElementById("orderButton");
+const quantityInfo = document.getElementById("quantityInfo");
 
-const platformInput =
-  document.getElementById("platform");
 
-const serviceInput =
-  document.getElementById("service");
+/*
+========================================
+SERVICES
+========================================
+*/
 
-const linkInput =
-  document.getElementById("link");
-
-const quantityInput =
-  document.getElementById("quantity");
-
-const totalPrice =
-  document.getElementById("totalPrice");
-
-const currentBalance =
-  document.getElementById("currentBalance");
-
-const orderMessage =
-  document.getElementById("orderMessage");
-
-const orderButton =
-  document.getElementById("orderButton");
-
-const quantityInfo =
-  document.getElementById("quantityInfo");
+let services = [];
 
 
 /*
@@ -58,23 +55,28 @@ API
 
 async function api(url, options = {}) {
 
-  const response =
-    await fetch(url, {
-      ...options,
+  const response = await fetch(url, {
+    ...options,
 
-      headers: {
-        "Content-Type":
-          "application/json",
+    headers: {
+      "Content-Type": "application/json",
 
-        "Authorization":
-          `Bearer ${token}`,
+      "Authorization": `Bearer ${token}`,
 
-        ...(options.headers || {})
-      }
-    });
+      ...(options.headers || {})
+    }
+  });
 
-  const data =
-    await response.json().catch(() => ({}));
+  const data = await response
+    .json()
+    .catch(() => ({}));
+
+
+  /*
+  ==============================
+  SESSION EXPIRÉE
+  ==============================
+  */
 
   if (
     response.status === 401 ||
@@ -93,6 +95,13 @@ async function api(url, options = {}) {
     );
   }
 
+
+  /*
+  ==============================
+  ERREUR API
+  ==============================
+  */
+
   if (!response.ok) {
 
     throw new Error(
@@ -101,17 +110,9 @@ async function api(url, options = {}) {
     );
   }
 
+
   return data;
 }
-
-
-/*
-========================================
-SERVICES
-========================================
-*/
-
-let services = [];
 
 
 /*
@@ -124,22 +125,86 @@ async function loadServices() {
 
   try {
 
+    showMessage(
+      "Chargement des services...",
+      "info"
+    );
+
+
+    const platform =
+      platformInput?.value?.trim() || "";
+
+
+    let url =
+      "/api/services";
+
+
+    /*
+    Si une plateforme est déjà sélectionnée,
+    on demande uniquement ses services.
+    */
+
+    if (platform) {
+
+      url +=
+        "?platform=" +
+        encodeURIComponent(
+          platform
+        );
+    }
+
+
     const data =
-      await api("/api/services");
+      await api(url);
+
 
     services =
-      data.services || [];
+      Array.isArray(
+        data.services
+      )
+        ? data.services
+        : [];
+
 
     updateServiceList();
+
+
+    /*
+    ==============================
+    MESSAGE
+    ==============================
+    */
+
+    if (!services.length) {
+
+      showMessage(
+        "Aucun service disponible pour le moment.",
+        "error"
+      );
+
+    } else {
+
+      clearMessage();
+
+    }
+
 
   } catch (error) {
 
     console.error(
-      "Erreur services:",
+      "NOSMYBOOST - Erreur services:",
       error
     );
 
+
+    services = [];
+
+
+    updateServiceList();
+
+
     showMessage(
+      error.message ||
       "Impossible de charger les services.",
       "error"
     );
@@ -149,7 +214,7 @@ async function loadServices() {
 
 /*
 ========================================
-AFFICHER SERVICES
+AFFICHER LA LISTE DES SERVICES
 ========================================
 */
 
@@ -158,8 +223,10 @@ function updateServiceList() {
   if (!serviceInput)
     return;
 
+
   const platform =
-    platformInput?.value || "";
+    platformInput?.value?.trim() || "";
+
 
   serviceInput.innerHTML = `
     <option value="">
@@ -167,38 +234,75 @@ function updateServiceList() {
     </option>
   `;
 
+
   serviceInput.disabled =
     !platform;
+
 
   if (!platform)
     return;
 
+
+  /*
+  ==============================
+  FILTRER LES SERVICES
+  ==============================
+  */
+
   const filtered =
-    services.filter(
-      service =>
-        String(service.platform || "")
-          .toLowerCase() ===
-        String(platform)
-          .toLowerCase()
-    );
+    services.filter(service => {
+
+      return String(
+        service.platform || ""
+      )
+        .trim()
+        .toLowerCase() ===
+      platform
+        .toLowerCase();
+
+    });
+
+
+  /*
+  ==============================
+  AJOUTER SERVICES
+  ==============================
+  */
 
   filtered.forEach(service => {
 
     const option =
-      document.createElement("option");
+      document.createElement(
+        "option"
+      );
+
 
     option.value =
-      service.id;
+      String(service.id);
+
+
+    const price =
+      Number(
+        service.price || 0
+      );
+
 
     option.textContent =
-      `${service.name} — ${
-        formatMoney(service.price)
-      } CDF / 1000`;
+      `${service.name} — ${formatMoney(price)} CDF / 1000`;
+
 
     serviceInput.appendChild(
       option
     );
+
   });
+
+
+  /*
+  ==============================
+  AUCUN SERVICE
+  ==============================
+  */
 
   if (!filtered.length) {
 
@@ -207,6 +311,9 @@ function updateServiceList() {
         Aucun service disponible
       </option>
     `;
+
+    serviceInput.disabled =
+      true;
   }
 }
 
@@ -222,8 +329,10 @@ function getSelectedService() {
   const id =
     serviceInput?.value;
 
+
   if (!id)
     return null;
+
 
   return services.find(
     service =>
@@ -235,7 +344,18 @@ function getSelectedService() {
 
 /*
 ========================================
-CALCUL PRIX
+CALCUL DU PRIX
+========================================
+
+Le backend utilise :
+
+price × quantity / 1000
+
+Exemple :
+
+1 000 = prix du service
+2 000 = prix × 2
+5 000 = prix × 5
 ========================================
 */
 
@@ -244,31 +364,56 @@ function calculatePrice() {
   const service =
     getSelectedService();
 
+
   const quantity =
     Number(
       quantityInput?.value
     );
 
+
   if (
     !service ||
-    !Number.isFinite(quantity) ||
+    !Number.isInteger(quantity) ||
     quantity <= 0
   ) {
 
     if (totalPrice) {
+
       totalPrice.textContent =
         "0 CDF";
     }
 
+
     return 0;
   }
 
+
   const rate =
-    Number(service.price || 0);
+    Number(
+      service.price || 0
+    );
+
+
+  if (
+    !Number.isFinite(rate) ||
+    rate <= 0
+  ) {
+
+    if (totalPrice) {
+
+      totalPrice.textContent =
+        "0 CDF";
+    }
+
+
+    return 0;
+  }
+
 
   const price =
     (quantity / 1000) *
     rate;
+
 
   if (totalPrice) {
 
@@ -277,13 +422,14 @@ function calculatePrice() {
       " CDF";
   }
 
+
   return price;
 }
 
 
 /*
 ========================================
-LIMITES SERVICE
+LIMITES DU SERVICE
 ========================================
 */
 
@@ -292,8 +438,10 @@ function updateQuantityInfo() {
   const service =
     getSelectedService();
 
+
   if (!quantityInfo)
     return;
+
 
   if (!service) {
 
@@ -303,15 +451,18 @@ function updateQuantityInfo() {
     return;
   }
 
+
   const min =
     Number(
       service.min_quantity || 1
     );
 
+
   const max =
     Number(
       service.max_quantity || 1000000
     );
+
 
   quantityInfo.textContent =
     `Minimum : ${formatMoney(min)} — Maximum : ${formatMoney(max)}`;
@@ -328,20 +479,55 @@ if (platformInput) {
 
   platformInput.addEventListener(
     "change",
-    () => {
+    async () => {
 
-      updateServiceList();
+      /*
+      Réinitialiser le service
+      */
 
-      if (quantityInput) {
-        quantityInput.value = "";
+      if (serviceInput) {
+
+        serviceInput.innerHTML = `
+          <option value="">
+            Chargement des services...
+          </option>
+        `;
+
+        serviceInput.disabled =
+          true;
       }
 
+
+      if (quantityInput) {
+
+        quantityInput.value =
+          "";
+      }
+
+
+      if (linkInput) {
+
+        linkInput.value =
+          "";
+      }
+
+
       if (totalPrice) {
+
         totalPrice.textContent =
           "0 CDF";
       }
 
+
       updateQuantityInfo();
+
+
+      /*
+      Recharger les services
+      */
+
+      await loadServices();
+
     }
   );
 }
@@ -362,6 +548,9 @@ if (serviceInput) {
       updateQuantityInfo();
 
       calculatePrice();
+
+      clearMessage();
+
     }
   );
 }
@@ -380,6 +569,9 @@ if (quantityInput) {
     () => {
 
       calculatePrice();
+
+      clearMessage();
+
     }
   );
 }
@@ -387,7 +579,7 @@ if (quantityInput) {
 
 /*
 ========================================
-CHARGER SOLDE
+CHARGER LE SOLDE
 ========================================
 */
 
@@ -396,24 +588,33 @@ async function loadBalance() {
   if (!currentBalance)
     return;
 
+
   try {
 
     const data =
-      await api("/api/auth/me");
+      await api(
+        "/api/auth/me"
+      );
+
 
     const balance =
-      data.user?.balance || 0;
+      Number(
+        data.user?.balance || 0
+      );
+
 
     currentBalance.textContent =
       formatMoney(balance) +
       " CDF";
 
+
   } catch (error) {
 
     console.error(
-      "Erreur solde:",
+      "NOSMYBOOST - Erreur solde:",
       error
     );
+
 
     currentBalance.textContent =
       "—";
@@ -423,7 +624,7 @@ async function loadBalance() {
 
 /*
 ========================================
-ENVOYER COMMANDE
+ENVOYER LA COMMANDE
 ========================================
 */
 
@@ -435,17 +636,34 @@ if (orderForm) {
 
       event.preventDefault();
 
+
+      /*
+      ==============================
+      RÉCUPÉRER LES DONNÉES
+      ==============================
+      */
+
       const service =
         getSelectedService();
 
+
       const link =
-        linkInput?.value.trim();
+        String(
+          linkInput?.value || ""
+        ).trim();
+
 
       const quantity =
         Number(
           quantityInput?.value
         );
 
+
+      /*
+      ==============================
+      SERVICE
+      ==============================
+      */
 
       if (!service) {
 
@@ -458,16 +676,30 @@ if (orderForm) {
       }
 
 
+      /*
+      ==============================
+      LIEN
+      ==============================
+      */
+
       if (!link) {
 
         showMessage(
-          "Veuillez entrer le lien.",
+          "Veuillez entrer le lien de votre publication ou profil.",
           "error"
         );
+
+        linkInput?.focus();
 
         return;
       }
 
+
+      /*
+      ==============================
+      QUANTITÉ
+      ==============================
+      */
 
       if (
         !Number.isInteger(quantity) ||
@@ -475,23 +707,31 @@ if (orderForm) {
       ) {
 
         showMessage(
-          "Veuillez entrer une quantité valide.",
+          "Veuillez entrer une quantité entière valide.",
           "error"
         );
+
+        quantityInput?.focus();
 
         return;
       }
 
+
+      /*
+      ==============================
+      LIMITES
+      ==============================
+      */
 
       const min =
         Number(
           service.min_quantity || 1
         );
 
+
       const max =
         Number(
-          service.max_quantity ||
-          1000000
+          service.max_quantity || 1000000
         );
 
 
@@ -501,6 +741,8 @@ if (orderForm) {
           `La quantité minimum est de ${formatMoney(min)}.`,
           "error"
         );
+
+        quantityInput?.focus();
 
         return;
       }
@@ -513,9 +755,17 @@ if (orderForm) {
           "error"
         );
 
+        quantityInput?.focus();
+
         return;
       }
 
+
+      /*
+      ==============================
+      CALCUL PRIX
+      ==============================
+      */
 
       const price =
         calculatePrice();
@@ -527,7 +777,7 @@ if (orderForm) {
       ) {
 
         showMessage(
-          "Prix du service invalide.",
+          "Impossible de calculer le prix de ce service.",
           "error"
         );
 
@@ -535,20 +785,55 @@ if (orderForm) {
       }
 
 
+      /*
+      ==============================
+      CONFIRMATION VISUELLE
+      ==============================
+      */
+
+      const confirmation =
+        window.confirm(
+          `Confirmer la commande ?\n\n` +
+          `Service : ${service.name}\n` +
+          `Quantité : ${formatMoney(quantity)}\n` +
+          `Prix : ${formatMoney(price)} CDF\n\n` +
+          `Le montant sera déduit de votre solde.`
+        );
+
+
+      if (!confirmation)
+        return;
+
+
+      /*
+      ==============================
+      ENVOI
+      ==============================
+      */
+
       try {
 
-        orderButton.disabled =
-          true;
+        if (orderButton) {
 
-        orderButton.textContent =
-          "Commande en cours...";
+          orderButton.disabled =
+            true;
+
+          orderButton.textContent =
+            "⏳ Commande en cours...";
+        }
 
 
         showMessage(
-          "Vérification et création de votre commande...",
+          "Vérification de votre solde et création de la commande...",
           "info"
         );
 
+
+        /*
+        ==============================
+        API
+        ==============================
+        */
 
         const data =
           await api(
@@ -560,7 +845,7 @@ if (orderForm) {
                 JSON.stringify({
 
                   serviceId:
-                    service.id,
+                    Number(service.id),
 
                   link,
 
@@ -571,24 +856,60 @@ if (orderForm) {
           );
 
 
+        /*
+        ==============================
+        SUCCÈS
+        ==============================
+        */
+
         showMessage(
           data.message ||
-          "Commande créée avec succès.",
+          "✅ Commande créée avec succès.",
           "success"
         );
 
 
+        /*
+        ==============================
+        RÉINITIALISER
+        ==============================
+        */
+
         orderForm.reset();
 
-        serviceInput.disabled =
-          true;
 
-        totalPrice.textContent =
-          "0 CDF";
+        if (serviceInput) {
 
-        quantityInfo.textContent =
-          "Choisissez un service pour voir les limites.";
+          serviceInput.innerHTML = `
+            <option value="">
+              Choisissez un service
+            </option>
+          `;
 
+          serviceInput.disabled =
+            true;
+        }
+
+
+        if (totalPrice) {
+
+          totalPrice.textContent =
+            "0 CDF";
+        }
+
+
+        if (quantityInfo) {
+
+          quantityInfo.textContent =
+            "Choisissez un service pour voir les limites.";
+        }
+
+
+        /*
+        ==============================
+        ACTUALISER SOLDE
+        ==============================
+        */
 
         await loadBalance();
 
@@ -596,23 +917,28 @@ if (orderForm) {
       } catch (error) {
 
         console.error(
-          "Erreur commande:",
+          "NOSMYBOOST - Erreur commande:",
           error
         );
 
+
         showMessage(
-          error.message,
+          error.message ||
+          "Impossible de créer la commande.",
           "error"
         );
 
 
       } finally {
 
-        orderButton.disabled =
-          false;
+        if (orderButton) {
 
-        orderButton.textContent =
-          "🛒 Commander maintenant";
+          orderButton.disabled =
+            false;
+
+          orderButton.textContent =
+            "🛒 Commander maintenant";
+        }
       }
     }
   );
@@ -625,13 +951,18 @@ MESSAGE
 ========================================
 */
 
-function showMessage(text, type) {
+function showMessage(
+  text,
+  type = "info"
+) {
 
   if (!orderMessage)
     return;
 
+
   orderMessage.textContent =
     text;
+
 
   orderMessage.style.padding =
     "12px 16px";
@@ -653,7 +984,7 @@ function showMessage(text, type) {
   }
 
 
-  if (type === "error") {
+  else if (type === "error") {
 
     orderMessage.style.background =
       "#fef3f2";
@@ -663,7 +994,7 @@ function showMessage(text, type) {
   }
 
 
-  if (type === "info") {
+  else {
 
     orderMessage.style.background =
       "#eff8ff";
@@ -676,15 +1007,54 @@ function showMessage(text, type) {
 
 /*
 ========================================
+EFFACER MESSAGE
+========================================
+*/
+
+function clearMessage() {
+
+  if (!orderMessage)
+    return;
+
+
+  orderMessage.textContent =
+    "";
+
+  orderMessage.style.padding =
+    "";
+
+  orderMessage.style.marginTop =
+    "";
+
+  orderMessage.style.background =
+    "";
+
+  orderMessage.style.color =
+    "";
+}
+
+
+/*
+========================================
 FORMAT ARGENT
 ========================================
 */
 
 function formatMoney(amount) {
 
-  return Number(
-    amount || 0
-  ).toLocaleString(
+  const value =
+    Number(amount);
+
+
+  if (
+    !Number.isFinite(value)
+  ) {
+
+    return "0";
+  }
+
+
+  return value.toLocaleString(
     "fr-FR",
     {
       minimumFractionDigits: 0,
@@ -702,9 +1072,30 @@ DÉMARRAGE
 
 async function initOrder() {
 
+  if (!token)
+    return;
+
+
+  /*
+  Solde
+  */
+
   await loadBalance();
 
+
+  /*
+  Services
+  */
+
   await loadServices();
+
 }
+
+
+/*
+========================================
+LANCEMENT
+========================================
+*/
 
 initOrder();
