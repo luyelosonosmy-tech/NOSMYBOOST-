@@ -4,7 +4,7 @@
   "description": "NOSMYBOOST🇧🇪 - Panel SMM",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node scripts/sync-services.js && node server.js",
     "dev": "node server.js"
   },
   "dependencies": {
