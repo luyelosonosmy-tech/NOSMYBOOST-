@@ -6,12 +6,6 @@ const router = express.Router();
 const authenticateToken =
   require("../middleware/auth");
 
-const SMM_API_URL =
-  "https://smm.africa/api/v3";
-
-const SMM_API_KEY =
-  process.env.SMM_API_KEY;
-
 
 /*
 ========================================
@@ -20,10 +14,17 @@ COMMANDES CLIENT + SMM AFRICA
 ========================================
 */
 
+const SMM_API_URL =
+  process.env.SMM_API_URL ||
+  "https://smm.africa/api/v3";
+
+const SMM_API_KEY =
+  process.env.SMM_API_KEY;
+
 
 /*
 ========================================
-APPEL SMM AFRICA
+APPEL API SMM AFRICA
 ========================================
 */
 
@@ -36,7 +37,6 @@ async function smmAfricaRequest(payload) {
     );
 
   }
-
 
   const response =
     await fetch(
@@ -84,7 +84,6 @@ async function smmAfricaRequest(payload) {
 
 
   return data;
-
 }
 
 
@@ -99,97 +98,85 @@ router.post(
   authenticateToken,
   async (req, res) => {
 
-    const userId =
-      Number(req.user.id);
-
-    const serviceId =
-      Number(req.body.serviceId);
-
-    const link =
-      String(
-        req.body.link || ""
-      ).trim();
-
-    const quantity =
-      Number(req.body.quantity);
-
-
-    /*
-    ==============================
-    VALIDATION
-    ==============================
-    */
-
-    if (
-      !Number.isInteger(userId) ||
-      userId <= 0
-    ) {
-
-      return res.status(401).json({
-
-        success: false,
-
-        message:
-          "Session utilisateur invalide."
-
-      });
-
-    }
-
-
-    if (
-      !Number.isInteger(serviceId) ||
-      serviceId <= 0
-    ) {
-
-      return res.status(400).json({
-
-        success: false,
-
-        message:
-          "Service invalide."
-
-      });
-
-    }
-
-
-    if (!link) {
-
-      return res.status(400).json({
-
-        success: false,
-
-        message:
-          "Veuillez entrer le lien."
-
-      });
-
-    }
-
-
-    if (
-      !Number.isInteger(quantity) ||
-      quantity <= 0
-    ) {
-
-      return res.status(400).json({
-
-        success: false,
-
-        message:
-          "Quantité invalide."
-
-      });
-
-    }
-
-
     try {
+
+      const userId =
+        Number(req.user.id);
+
+      const serviceId =
+        Number(req.body.serviceId);
+
+      const link =
+        String(
+          req.body.link || ""
+        ).trim();
+
+      const quantity =
+        Number(req.body.quantity);
+
 
       /*
       ==============================
-      RÉCUPÉRER SERVICE
+      VALIDATION
+      ==============================
+      */
+
+      if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+      ) {
+
+        return res.status(401).json({
+          success: false,
+          message:
+            "Session utilisateur invalide."
+        });
+
+      }
+
+
+      if (
+        !Number.isInteger(serviceId) ||
+        serviceId <= 0
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Service invalide."
+        });
+
+      }
+
+
+      if (!link) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Veuillez entrer le lien."
+        });
+
+      }
+
+
+      if (
+        !Number.isInteger(quantity) ||
+        quantity <= 0
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Quantité invalide."
+        });
+
+      }
+
+
+      /*
+      ==============================
+      RÉCUPÉRER LE SERVICE
       ==============================
       */
 
@@ -202,6 +189,7 @@ router.post(
               SELECT
                 id,
                 name,
+                platform,
                 price,
                 min_quantity,
                 max_quantity,
@@ -214,11 +202,11 @@ router.post(
               [serviceId],
               (error, row) => {
 
-                if (error)
+                if (error) {
                   return reject(error);
+                }
 
                 resolve(row);
-
               }
             );
 
@@ -226,18 +214,25 @@ router.post(
         );
 
 
-      if (
-        !service ||
-        service.active !== 1
-      ) {
+      if (!service) {
 
         return res.status(404).json({
-
           success: false,
-
           message:
-            "Service indisponible."
+            "Service introuvable."
+        });
 
+      }
+
+
+      if (
+        Number(service.active) !== 1
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Ce service est actuellement désactivé."
         });
 
       }
@@ -245,15 +240,16 @@ router.post(
 
       /*
       ==============================
-      VÉRIFIER FOURNISSEUR
+      ID SMM AFRICA
       ==============================
       */
 
       if (
+        service.provider_service_id === null ||
+        service.provider_service_id === undefined ||
         String(
-          service.provider || ""
-        ).toLowerCase() !==
-        "smm africa"
+          service.provider_service_id
+        ).trim() === ""
       ) {
 
         return res.status(400).json({
@@ -261,15 +257,24 @@ router.post(
           success: false,
 
           message:
-            "Ce service n'est pas encore connecté au fournisseur."
+            `Le service "${service.name}" n'a pas encore de provider_service_id SMM Africa.`
 
         });
 
       }
 
 
+      const providerServiceId =
+        Number(
+          service.provider_service_id
+        );
+
+
       if (
-        !service.provider_service_id
+        !Number.isInteger(
+          providerServiceId
+        ) ||
+        providerServiceId <= 0
       ) {
 
         return res.status(400).json({
@@ -277,7 +282,7 @@ router.post(
           success: false,
 
           message:
-            "ID fournisseur manquant pour ce service."
+            "Le provider_service_id de ce service est invalide."
 
         });
 
@@ -290,34 +295,40 @@ router.post(
       ==============================
       */
 
-      if (
-        quantity <
-        Number(service.min_quantity)
-      ) {
+      const min =
+        Number(
+          service.min_quantity || 1
+        );
+
+      const max =
+        Number(
+          service.max_quantity ||
+          1000000
+        );
+
+
+      if (quantity < min) {
 
         return res.status(400).json({
 
           success: false,
 
           message:
-            `La quantité minimum est de ${service.min_quantity}.`
+            `La quantité minimum est de ${min}.`
 
         });
 
       }
 
 
-      if (
-        quantity >
-        Number(service.max_quantity)
-      ) {
+      if (quantity > max) {
 
         return res.status(400).json({
 
           success: false,
 
           message:
-            `La quantité maximum est de ${service.max_quantity}.`
+            `La quantité maximum est de ${max}.`
 
         });
 
@@ -326,24 +337,23 @@ router.post(
 
       /*
       ==============================
-      PRIX CLIENT
+      PRIX NOSMYBOOST
       ==============================
 
-      price = prix NOSMYBOOST pour 1000
+      price = prix pour 1000
       */
 
-      const totalPrice =
+      const servicePrice =
         Number(
-          (
-            (quantity / 1000) *
-            Number(service.price)
-          ).toFixed(2)
+          service.price
         );
 
 
       if (
-        !Number.isFinite(totalPrice) ||
-        totalPrice <= 0
+        !Number.isFinite(
+          servicePrice
+        ) ||
+        servicePrice <= 0
       ) {
 
         return res.status(400).json({
@@ -358,9 +368,19 @@ router.post(
       }
 
 
+      const totalPrice =
+        Number(
+          (
+            quantity /
+            1000 *
+            servicePrice
+          ).toFixed(2)
+        );
+
+
       /*
       ==============================
-      RÉCUPÉRER CLIENT
+      RÉCUPÉRER LE CLIENT
       ==============================
       */
 
@@ -372,18 +392,19 @@ router.post(
               `
               SELECT
                 id,
-                balance
+                balance,
+                total_spent
               FROM users
               WHERE id = ?
               `,
               [userId],
               (error, row) => {
 
-                if (error)
+                if (error) {
                   return reject(error);
+                }
 
                 resolve(row);
-
               }
             );
 
@@ -411,8 +432,14 @@ router.post(
       ==============================
       */
 
+      const balance =
+        Number(
+          user.balance || 0
+        );
+
+
       if (
-        Number(user.balance) <
+        balance <
         totalPrice
       ) {
 
@@ -426,8 +453,7 @@ router.post(
           required:
             totalPrice,
 
-          balance:
-            Number(user.balance)
+          balance
 
         });
 
@@ -436,9 +462,14 @@ router.post(
 
       /*
       ==============================
-      ENVOI CHEZ SMM AFRICA
+      ENVOYER À SMM AFRICA
       ==============================
       */
+
+      console.log(
+        `NOSMYBOOST → SMM Africa | service=${providerServiceId} | quantity=${quantity}`
+      );
+
 
       const providerResponse =
         await smmAfricaRequest({
@@ -447,9 +478,7 @@ router.post(
             "add",
 
           service:
-            Number(
-              service.provider_service_id
-            ),
+            providerServiceId,
 
           link,
 
@@ -460,7 +489,7 @@ router.post(
 
       /*
       ==============================
-      ID FOURNISSEUR
+      RÉCUPÉRER ORDER ID
       ==============================
       */
 
@@ -469,7 +498,11 @@ router.post(
 
 
       if (
-        !providerOrderId
+        providerOrderId === undefined ||
+        providerOrderId === null ||
+        String(
+          providerOrderId
+        ).trim() === ""
       ) {
 
         console.error(
@@ -482,7 +515,7 @@ router.post(
           success: false,
 
           message:
-            "Le fournisseur n'a pas retourné de numéro de commande."
+            "SMM Africa n'a pas retourné d'ID de commande."
 
         });
 
@@ -495,161 +528,188 @@ router.post(
       ==============================
       */
 
-      await new Promise(
-        (resolve, reject) => {
+      const localOrderId =
+        await new Promise(
+          (resolve, reject) => {
 
-          db.serialize(() => {
+            db.serialize(() => {
 
-            db.run(
-              "BEGIN TRANSACTION",
-              beginError => {
+              db.run(
+                "BEGIN TRANSACTION",
+                beginError => {
 
-                if (beginError)
-                  return reject(beginError);
+                  if (beginError) {
+                    return reject(
+                      beginError
+                    );
+                  }
 
 
-                db.run(
-                  `
-                  UPDATE users
+                  /*
+                  ========================
+                  DÉBITER LE CLIENT
+                  ========================
+                  */
 
-                  SET
-                    balance =
-                      balance - ?,
+                  db.run(
+                    `
+                    UPDATE users
 
-                    total_spent =
-                      total_spent + ?
+                    SET
+                      balance =
+                        balance - ?,
 
-                  WHERE id = ?
+                      total_spent =
+                        total_spent + ?
 
-                    AND balance >= ?
-                  `,
-                  [
-                    totalPrice,
-                    totalPrice,
-                    userId,
-                    totalPrice
-                  ],
-                  function (balanceError) {
+                    WHERE id = ?
 
-                    if (
-                      balanceError ||
-                      this.changes !== 1
+                      AND balance >= ?
+                    `,
+                    [
+                      totalPrice,
+                      totalPrice,
+                      userId,
+                      totalPrice
+                    ],
+                    function (
+                      balanceError
                     ) {
 
-                      return db.run(
-                        "ROLLBACK",
-                        () => {
+                      if (
+                        balanceError ||
+                        this.changes !== 1
+                      ) {
 
-                          reject(
-                            new Error(
-                              "Impossible de débiter le solde."
-                            )
-                          );
+                        return db.run(
+                          "ROLLBACK",
+                          () => {
 
-                        }
-                      );
-
-                    }
-
-
-                    db.run(
-                      `
-                      INSERT INTO orders
-                      (
-                        user_id,
-                        service_id,
-                        link,
-                        quantity,
-                        price,
-                        status,
-                        provider_order_id
-                      )
-
-                      VALUES
-                      (
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        'processing',
-                        ?
-                      )
-                      `,
-                      [
-                        userId,
-                        serviceId,
-                        link,
-                        quantity,
-                        totalPrice,
-                        String(
-                          providerOrderId
-                        )
-                      ],
-                      function (orderError) {
-
-                        if (orderError) {
-
-                          return db.run(
-                            "ROLLBACK",
-                            () => {
-
-                              reject(
-                                orderError
-                              );
-
-                            }
-                          );
-
-                        }
-
-
-                        const orderId =
-                          this.lastID;
-
-
-                        db.run(
-                          "COMMIT",
-                          commitError => {
-
-                            if (
-                              commitError
-                            ) {
-
-                              return db.run(
-                                "ROLLBACK",
-                                () => {
-
-                                  reject(
-                                    commitError
-                                  );
-
-                                }
-                              );
-
-                            }
-
-
-                            resolve(
-                              orderId
+                            reject(
+                              new Error(
+                                "Impossible de débiter le solde."
+                              )
                             );
 
                           }
                         );
 
                       }
-                    );
 
-                  }
-                );
 
-              }
-            );
+                      /*
+                      ========================
+                      ENREGISTRER COMMANDE
+                      ========================
+                      */
 
-          });
+                      db.run(
+                        `
+                        INSERT INTO orders
+                        (
+                          user_id,
+                          service_id,
+                          link,
+                          quantity,
+                          price,
+                          status,
+                          provider_order_id
+                        )
 
-        }
-      );
+                        VALUES
+                        (
+                          ?,
+                          ?,
+                          ?,
+                          ?,
+                          ?,
+                          ?,
+                          ?
+                        )
+                        `,
+                        [
+                          userId,
+                          serviceId,
+                          link,
+                          quantity,
+                          totalPrice,
+                          "processing",
+                          String(
+                            providerOrderId
+                          )
+                        ],
+                        function (
+                          orderError
+                        ) {
+
+                          if (orderError) {
+
+                            return db.run(
+                              "ROLLBACK",
+                              () => {
+
+                                reject(
+                                  orderError
+                                );
+
+                              }
+                            );
+
+                          }
+
+
+                          const orderId =
+                            this.lastID;
+
+
+                          /*
+                          ========================
+                          COMMIT
+                          ========================
+                          */
+
+                          db.run(
+                            "COMMIT",
+                            commitError => {
+
+                              if (
+                                commitError
+                              ) {
+
+                                return db.run(
+                                  "ROLLBACK",
+                                  () => {
+
+                                    reject(
+                                      commitError
+                                    );
+
+                                  }
+                                );
+
+                              }
+
+
+                              resolve(
+                                orderId
+                              );
+
+                            }
+                          );
+
+                        }
+                      );
+
+                    }
+                  );
+
+                }
+              );
+
+            });
+
+          }
+        );
 
 
       /*
@@ -657,6 +717,11 @@ router.post(
       SUCCÈS
       ==============================
       */
+
+      console.log(
+        `NOSMYBOOST COMMANDE #${localOrderId} → SMM Africa #${providerOrderId}`
+      );
+
 
       return res.status(201).json({
 
@@ -668,7 +733,12 @@ router.post(
         order: {
 
           id:
-            providerOrderId,
+            localOrderId,
+
+          provider_order_id:
+            String(
+              providerOrderId
+            ),
 
           service_id:
             serviceId,
@@ -689,8 +759,8 @@ router.post(
     } catch (error) {
 
       console.error(
-        "Erreur commande SMM Africa:",
-        error.message
+        "NOSMYBOOST - Erreur commande:",
+        error
       );
 
 
@@ -762,7 +832,9 @@ router.get(
 
         if (error) {
 
-          console.error(error);
+          console.error(
+            error
+          );
 
           return res.status(500).json({
 
@@ -776,7 +848,7 @@ router.get(
         }
 
 
-        res.json({
+        return res.json({
 
           success: true,
 
@@ -831,14 +903,21 @@ router.get(
       SELECT
 
         orders.id,
+
         orders.link,
+
         orders.quantity,
+
         orders.price,
+
         orders.status,
+
         orders.provider_order_id,
+
         orders.created_at,
 
         services.platform,
+
         services.name AS service_name
 
       FROM orders
@@ -859,7 +938,9 @@ router.get(
 
         if (error) {
 
-          console.error(error);
+          console.error(
+            error
+          );
 
           return res.status(500).json({
 
@@ -887,7 +968,7 @@ router.get(
         }
 
 
-        res.json({
+        return res.json({
 
           success: true,
 
