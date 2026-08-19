@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>
+    Nouvelle commande — NOSMYBOOST🇧🇪
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="/css/style.css"
+  >
+
+</head>
+
+<body>
+
+  <header class="site-header">
+
+    <div class="container">
+
+      <a
+        href="/dashboard.html"
+        class="logo"
+      >
+        🇧🇪 NOSMYBOOST
+      </a>
+
+      <nav>
+
+        <a href="/dashboard.html">
+          Accueil
+        </a>
+
+        <a href="/deposit.html">
+          Recharger
+        </a>
+
+        <a href="/orders.html">
+          Commandes
+        </a>
+
+      </nav>
+
+    </div>
+
+  </header>
+
+
+  <main class="container">
+
+    <section class="page-header">
+
+      <h1>
+        🛒 Nouvelle commande
+      </h1>
+
+      <p>
+        Choisissez votre service et indiquez
+        la quantité souhaitée.
+      </p>
+
+    </section>
+
+
+    <section class="balance-card">
+
+      <span>
+        Solde disponible
+      </span>
+
+      <strong id="currentBalance">
+        0 CDF
+      </strong>
+
+    </section>
+
+
+    <section class="order-card">
+
+      <form id="orderForm">
+
+
+        <div class="form-group">
+
+          <label for="platform">
+            Plateforme
+          </label>
+
+          <select
+            id="platform"
+            required
+          >
+
+            <option value="">
+              Choisissez une plateforme
+            </option>
+
+            <option value="Instagram">
+              📸 Instagram
+            </option>
+
+            <option value="Facebook">
+              👍 Facebook
+            </option>
+
+            <option value="TikTok">
+              🎵 TikTok
+            </option>
+
+            <option value="YouTube">
+              ▶️ YouTube
+            </option>
+
+            <option value="Telegram">
+              ✈️ Telegram
+            </option>
+
+            <option value="X">
+              𝕏 X
+            </option>
+
+            <option value="Snapchat">
+              👻 Snapchat
+            </option>
+
+            <option value="WhatsApp">
+              💬 WhatsApp
+            </option>
+
+            <option value="Spotify">
+              🎧 Spotify
+            </option>
+
+            <option value="LinkedIn">
+              💼 LinkedIn
+            </option>
+
+            <option value="Discord">
+              🎮 Discord
+            </option>
+
+            <option value="Site Web">
+              🌐 Site Web
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="service">
+            Service
+          </label>
+
+          <select
+            id="service"
+            required
+            disabled
+          >
+
+            <option value="">
+              Choisissez d'abord une plateforme
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="link">
+            Lien
+          </label>
+
+          <input
+            type="url"
+            id="link"
+            placeholder="https://..."
+            required
+          >
+
+          <small>
+            Entrez le lien exact de votre
+            publication, profil ou contenu.
+          </small>
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="quantity">
+            Quantité
+          </label>
+
+          <input
+            type="number"
+            id="quantity"
+            min="1"
+            placeholder="Exemple : 1000"
+            required
+          >
+
+          <small id="quantityInfo">
+            Choisissez un service pour voir
+            les limites.
+          </small>
+
+        </div>
+
+
+        <div class="price-box">
+
+          <span>
+            Prix total
+          </span>
+
+          <strong id="totalPrice">
+            0 CDF
+          </strong>
+
+        </div>
+
+
+        <div
+          id="orderMessage"
+          class="message"
+        ></div>
+
+
+        <button
+          type="submit"
+          id="orderButton"
+        >
+          🛒 Commander maintenant
+        </button>
+
+
+      </form>
+
+    </section>
+
+
+    <section class="info-card">
+
+      <h2>
+        ℹ️ Comment ça marche ?
+      </h2>
+
+      <ol>
+
+        <li>
+          Choisissez votre plateforme.
+        </li>
+
+        <li>
+          Choisissez le service souhaité.
+        </li>
+
+        <li>
+          Entrez le lien de votre contenu.
+        </li>
+
+        <li>
+          Indiquez le nombre souhaité.
+        </li>
+
+        <li>
+          Vérifiez le prix.
+        </li>
+
+        <li>
+          Cliquez sur
+          <strong>
+            Commander maintenant
+          </strong>.
+        </li>
+
+      </ol>
+
+      <p>
+        La commande est ensuite envoyée au
+        fournisseur pour traitement.
+      </p>
+
+    </section>
+
+  </main>
+
+
+  <footer>
+
+    <div class="container">
+
+      <strong>
+        NOSMYBOOST🇧🇪
+      </strong>
+
+      <p>
+        Votre panel SMM professionnel.
+      </p>
+
+      <a href="/dashboard.html">
+        Accueil
+      </a>
+
+      ·
+
+      <a href="/deposit.html">
+        Recharger
+      </a>
+
+      ·
+
+      <a href="/orders.html">
+        Commandes
+      </a>
+
+    </div>
+
+  </footer>
+
+
+  <script src="/js/new-order.js"></script>
+
+</body>
+  </html>
