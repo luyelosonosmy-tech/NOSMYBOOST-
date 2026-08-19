@@ -15,6 +15,16 @@ if (!token) {
 
 /*
 ========================================
+CONFIGURATION DÉPÔT
+========================================
+*/
+
+const MIN_DEPOSIT = 2500;
+const MIN_DEPOSIT_USD = 1;
+
+
+/*
+========================================
 ÉLÉMENTS
 ========================================
 */
@@ -64,12 +74,7 @@ const logoutButton =
 
 /*
 ========================================
-NUMÉROS DE PAIEMENT
-========================================
-
-⚠️ LAISSÉS VIDES POUR LE MOMENT.
-On les configurera ensemble avant la mise
-en production.
+NUMÉROS DE PAIEMENT NOSMYBOOST
 ========================================
 */
 
@@ -77,17 +82,17 @@ const PAYMENT_METHODS = {
 
   airtel: {
     name: "Airtel Money",
-    number: ""
+    number: "0980630622"
   },
 
   mpesa: {
     name: "Vodacom M-Pesa",
-    number: ""
+    number: "0822886387"
   },
 
   orange: {
     name: "Orange Money",
-    number: ""
+    number: "0843066709"
   }
 
 };
@@ -183,6 +188,12 @@ function showPaymentInstructions(
         Choisissez un moyen de paiement
         pour voir les instructions.
       </p>
+
+      <p>
+        Dépôt minimum :
+        <strong>${formatMoney(MIN_DEPOSIT)} CDF</strong>
+        (environ ${MIN_DEPOSIT_USD} $).
+      </p>
     `;
 
     return;
@@ -198,41 +209,24 @@ function showPaymentInstructions(
     return;
 
 
-  if (!payment.number) {
-
-    paymentInstructions.innerHTML = `
-
-      <div>
-
-        <strong>
-          ${payment.name}
-        </strong>
-
-        <p>
-          Le numéro de paiement sera affiché
-          après configuration du compte de
-          paiement NOSMYBOOST🇧🇪.
-        </p>
-
-      </div>
-
-    `;
-
-    return;
-
-  }
-
-
   paymentInstructions.innerHTML = `
 
     <div>
 
       <strong>
-        ${payment.name}
+        ${escapeHtml(payment.name)}
       </strong>
 
       <p>
-        Envoyez votre montant au numéro :
+        Dépôt minimum :
+        <strong>
+          ${formatMoney(MIN_DEPOSIT)} CDF
+        </strong>
+        (environ ${MIN_DEPOSIT_USD} $).
+      </p>
+
+      <p>
+        Envoyez votre paiement au numéro :
       </p>
 
       <strong>
@@ -304,7 +298,7 @@ if (depositForm) {
 
       /*
       ==============================
-      VALIDATION
+      VALIDATION MONTANT
       ==============================
       */
 
@@ -323,6 +317,30 @@ if (depositForm) {
       }
 
 
+      if (amount < MIN_DEPOSIT) {
+
+        showMessage(
+          `Le dépôt minimum est de ${formatMoney(
+            MIN_DEPOSIT
+          )} CDF (environ ${MIN_DEPOSIT_USD} $).`,
+          "error"
+        );
+
+        if (amountInput) {
+          amountInput.focus();
+        }
+
+        return;
+
+      }
+
+
+      /*
+      ==============================
+      VALIDATION MÉTHODE
+      ==============================
+      */
+
       if (!method) {
 
         showMessage(
@@ -334,6 +352,12 @@ if (depositForm) {
 
       }
 
+
+      /*
+      ==============================
+      VALIDATION RÉFÉRENCE
+      ==============================
+      */
 
       if (!proof) {
 
@@ -852,6 +876,8 @@ DÉMARRAGE
 */
 
 async function initDeposit() {
+
+  showPaymentInstructions("");
 
   await loadBalance();
 
