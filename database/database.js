@@ -56,7 +56,7 @@ db.serialize(() => {
       quantity INTEGER NOT NULL,
       price REAL NOT NULL,
       status TEXT DEFAULT 'pending',
-      provider_order_id TEXT,
+      provider_service_id TEXT UNIQUE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
