@@ -202,6 +202,16 @@ DÉMARRAGE
 ========================================
 */
 
+console.log(
+  "SMM_API_KEY présente :",
+  Boolean(process.env.SMM_API_KEY)
+);
+
+console.log(
+  "SMM_API_URL :",
+  process.env.SMM_API_URL
+);
+
 app.listen(
   PORT,
   () => {
