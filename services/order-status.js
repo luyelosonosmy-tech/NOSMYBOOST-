@@ -1,14 +1,8 @@
 "use strict";
 
+require("dotenv").config();
+
 const db = require("../database/database");
-
-
-/*
-========================================
-NOSMYBOOST🇧🇪
-SYNCHRONISATION STATUTS SMM AFRICA
-========================================
-*/
 
 const SMM_API_URL =
   process.env.SMM_API_URL ||
@@ -20,50 +14,46 @@ const SMM_API_KEY =
 
 /*
 ========================================
-APPEL API SMM AFRICA
+NOSMYBOOST 🇧🇪
+SYNCHRONISATION AUTOMATIQUE COMMANDES
+SMM AFRICA
 ========================================
 */
 
-async function smmAfricaStatus(providerOrderId) {
+let syncRunning = false;
+
+
+/*
+========================================
+APPEL SMM AFRICA
+========================================
+*/
+
+async function smmAfricaRequest(payload) {
 
   if (!SMM_API_KEY) {
-
     throw new Error(
       "SMM_API_KEY manquante."
     );
-
   }
 
+  const response = await fetch(
+    SMM_API_URL,
+    {
+      method: "POST",
 
-  const response =
-    await fetch(
-      SMM_API_URL,
-      {
-        method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
 
-        headers: {
-          "Content-Type":
-            "application/json",
+        "Authorization":
+          `Bearer ${SMM_API_KEY}`
+      },
 
-          "Authorization":
-            `Bearer ${SMM_API_KEY}`
-        },
-
-        body:
-          JSON.stringify({
-
-            action:
-              "status",
-
-            order:
-              String(
-                providerOrderId
-              )
-
-          })
-        }
-      }
-    );
+      body:
+        JSON.stringify(payload)
+    }
+  );
 
 
   const data =
@@ -92,113 +82,12 @@ async function smmAfricaStatus(providerOrderId) {
 
 
   return data;
-
 }
 
 
 /*
 ========================================
-NORMALISER LE STATUT
-========================================
-*/
-
-function normalizeStatus(status) {
-
-  const value =
-    String(
-      status || ""
-    )
-      .trim()
-      .toLowerCase();
-
-
-  if (
-    value === "completed" ||
-    value === "complete"
-  ) {
-
-    return "completed";
-
-  }
-
-
-  if (
-    value === "processing" ||
-    value === "in progress" ||
-    value === "inprogress"
-  ) {
-
-    return "processing";
-
-  }
-
-
-  if (
-    value === "pending" ||
-    value === "queued" ||
-    value === "queue"
-  ) {
-
-    return "pending";
-
-  }
-
-
-  if (
-    value === "partial" ||
-    value === "partially completed"
-  ) {
-
-    return "partial";
-
-  }
-
-
-  if (
-    value === "canceled" ||
-    value === "cancelled" ||
-    value === "cancel"
-  ) {
-
-    return "canceled";
-
-  }
-
-
-  if (
-    value === "refunded" ||
-    value === "refund"
-  ) {
-
-    return "refunded";
-
-  }
-
-
-  if (
-    value === "failed" ||
-    value === "fail"
-  ) {
-
-    return "failed";
-
-  }
-
-
-  /*
-  Statut inconnu :
-  on conserve processing
-  plutôt que d'inventer un statut.
-  */
-
-  return "processing";
-
-}
-
-
-/*
-========================================
-RÉCUPÉRER COMMANDES À SYNCHRONISER
+RÉCUPÉRER LES COMMANDES À SYNCHRONISER
 ========================================
 */
 
@@ -219,34 +108,23 @@ function getOrdersToSync() {
 
         WHERE provider_order_id IS NOT NULL
 
-          AND TRIM(
-            provider_order_id
-          ) != ''
+          AND provider_order_id != ''
 
           AND status IN (
             'pending',
-            'processing',
-            'partial'
+            'processing'
           )
 
         ORDER BY id ASC
-
-        LIMIT 50
         `,
         [],
         (error, rows) => {
 
           if (error) {
-
-            return reject(
-              error
-            );
-
+            return reject(error);
           }
 
-          resolve(
-            rows || []
-          );
+          resolve(rows || []);
 
         }
       );
@@ -259,7 +137,7 @@ function getOrdersToSync() {
 
 /*
 ========================================
-METTRE À JOUR UNE COMMANDE
+METTRE À JOUR LE STATUT
 ========================================
 */
 
@@ -286,11 +164,7 @@ function updateOrderStatus(
         function (error) {
 
           if (error) {
-
-            return reject(
-              error
-            );
-
+            return reject(error);
           }
 
           resolve(
@@ -308,310 +182,222 @@ function updateOrderStatus(
 
 /*
 ========================================
-REMBOURSEMENT
-========================================
-
-ATTENTION :
-
-On rembourse uniquement les statuts
-où le fournisseur indique clairement
-que la commande n'est pas exécutée.
-
-completed = aucun remboursement
-processing = aucun remboursement
-pending = aucun remboursement
-partial = pas de remboursement automatique
-canceled = remboursement
-refunded = remboursement
-failed = remboursement
+TRADUCTION STATUT FOURNISSEUR
 ========================================
 */
 
-function refundOrderIfNeeded(
-  orderId
-) {
+function normalizeStatus(status) {
 
-  return new Promise(
-    (resolve, reject) => {
+  const value =
+    String(status || "")
+      .toLowerCase()
+      .trim();
 
-      db.serialize(() => {
 
-        db.run(
-          "BEGIN TRANSACTION",
-          beginError => {
+  /*
+  STATUTS TERMINÉS
+  */
 
-            if (beginError) {
+  if (
+    value === "completed" ||
+    value === "complete" ||
+    value === "done"
+  ) {
 
-              return reject(
-                beginError
-              );
+    return "completed";
 
-            }
+  }
 
 
-            /*
-            Récupérer commande + prix
-            */
+  /*
+  STATUTS EN TRAITEMENT
+  */
 
-            db.get(
-              `
-              SELECT
+  if (
+    value === "processing" ||
+    value === "in progress" ||
+    value === "in_progress"
+  ) {
 
-                id,
-                user_id,
-                price,
-                status
+    return "processing";
 
-              FROM orders
+  }
 
-              WHERE id = ?
-              `,
-              [
-                orderId
-              ],
-              (selectError, order) => {
 
-                if (selectError) {
+  /*
+  STATUTS ANNULÉS
+  */
 
-                  return db.run(
-                    "ROLLBACK",
-                    () => {
+  if (
+    value === "canceled" ||
+    value === "cancelled"
+  ) {
 
-                      reject(
-                        selectError
-                      );
+    return "canceled";
 
-                    }
-                  );
+  }
 
-                }
 
+  /*
+  STATUTS PARTIELS
+  */
 
-                if (!order) {
+  if (
+    value === "partial"
+  ) {
 
-                  return db.run(
-                    "ROLLBACK",
-                    () => {
+    return "partial";
 
-                      reject(
-                        new Error(
-                          "Commande introuvable."
-                        )
-                      );
+  }
 
-                    }
-                  );
 
-                }
+  /*
+  STATUTS REMBOURSÉS
+  */
 
+  if (
+    value === "refunded"
+  ) {
 
-                /*
-                Empêcher double remboursement
-                */
+    return "refunded";
 
-                if (
-                  order.status ===
-                  "refunded"
-                ) {
+  }
 
-                  return db.run(
-                    "ROLLBACK",
-                    () => {
 
-                      resolve(
-                        false
-                      );
+  /*
+  PAR DÉFAUT
+  */
 
-                    }
-                  );
-
-                }
-
-
-                const amount =
-                  Number(
-                    order.price || 0
-                  );
-
-
-                if (
-                  !Number.isFinite(
-                    amount
-                  ) ||
-                  amount <= 0
-                ) {
-
-                  return db.run(
-                    "ROLLBACK",
-                    () => {
-
-                      reject(
-                        new Error(
-                          "Montant de remboursement invalide."
-                        )
-                      );
-
-                    }
-                  );
-
-                }
-
-
-                /*
-                Créditer le client
-                */
-
-                db.run(
-                  `
-                  UPDATE users
-
-                  SET
-
-                    balance =
-                      balance + ?
-
-                  WHERE id = ?
-                  `,
-                  [
-                    amount,
-                    order.user_id
-                  ],
-                  function (
-                    balanceError
-                  ) {
-
-                    if (
-                      balanceError ||
-                      this.changes !== 1
-                    ) {
-
-                      return db.run(
-                        "ROLLBACK",
-                        () => {
-
-                          reject(
-                            new Error(
-                              "Impossible de rembourser le client."
-                            )
-                          );
-
-                        }
-                      );
-
-                    }
-
-
-                    /*
-                    Marquer refunded
-                    */
-
-                    db.run(
-                      `
-                      UPDATE orders
-
-                      SET status = ?
-
-                      WHERE id = ?
-                      `,
-                      [
-                        "refunded",
-                        orderId
-                      ],
-                      function (
-                        statusError
-                      ) {
-
-                        if (
-                          statusError ||
-                          this.changes !== 1
-                        ) {
-
-                          return db.run(
-                            "ROLLBACK",
-                            () => {
-
-                              reject(
-                                new Error(
-                                  "Impossible de marquer la commande remboursée."
-                                )
-                              );
-
-                            }
-                          );
-
-                        }
-
-
-                        /*
-                        COMMIT
-                        */
-
-                        db.run(
-                          "COMMIT",
-                          commitError => {
-
-                            if (
-                              commitError
-                            ) {
-
-                              return db.run(
-                                "ROLLBACK",
-                                () => {
-
-                                  reject(
-                                    commitError
-                                  );
-
-                                }
-                              );
-
-                            }
-
-
-                            resolve(
-                              true
-                            );
-
-                          }
-                        );
-
-                      }
-                    );
-
-                  }
-                );
-
-              }
-            );
-
-          }
-        );
-
-      });
-
-    }
-  );
+  return "pending";
 
 }
 
 
 /*
 ========================================
-SYNCHRONISER LES COMMANDES
+SYNCHRONISER UNE COMMANDE
 ========================================
 */
 
-async function syncOrderStatuses() {
+async function syncOneOrder(order) {
 
-  if (!SMM_API_KEY) {
+  try {
+
+    console.log(
+      `🔄 Vérification commande #${order.id} → SMM #${order.provider_order_id}`
+    );
+
+
+    const providerResponse =
+      await smmAfricaRequest({
+
+        action:
+          "status",
+
+        order:
+          String(
+            order.provider_order_id
+          )
+
+      });
+
+
+    /*
+    ==============================
+    STATUT FOURNISSEUR
+    ==============================
+    */
+
+    const providerStatus =
+      providerResponse?.status;
+
+
+    if (!providerStatus) {
+
+      console.log(
+        `⚠️ Aucun statut reçu pour #${order.id}`
+      );
+
+      return;
+
+    }
+
+
+    const newStatus =
+      normalizeStatus(
+        providerStatus
+      );
+
+
+    /*
+    ==============================
+    SI LE STATUT N'A PAS CHANGÉ
+    ==============================
+    */
+
+    if (
+      newStatus ===
+      order.status
+    ) {
+
+      console.log(
+        `ℹ️ Commande #${order.id} toujours ${newStatus}`
+      );
+
+      return;
+
+    }
+
+
+    /*
+    ==============================
+    MISE À JOUR
+    ==============================
+    */
+
+    await updateOrderStatus(
+      order.id,
+      newStatus
+    );
+
+
+    console.log(
+      `✅ Commande #${order.id}: ${order.status} → ${newStatus}`
+    );
+
+
+  } catch (error) {
 
     console.error(
-      "❌ SMM_API_KEY absente : synchronisation désactivée."
+      `❌ Erreur synchronisation commande #${order.id}:`,
+      error.message
+    );
+
+  }
+
+}
+
+
+/*
+========================================
+SYNCHRONISER TOUTES LES COMMANDES
+========================================
+*/
+
+async function syncOrders() {
+
+  if (syncRunning) {
+
+    console.log(
+      "⏳ Synchronisation déjà en cours..."
     );
 
     return;
 
   }
+
+
+  syncRunning = true;
 
 
   try {
@@ -620,7 +406,13 @@ async function syncOrderStatuses() {
       await getOrdersToSync();
 
 
-    if (!orders.length) {
+    if (
+      orders.length === 0
+    ) {
+
+      console.log(
+        "ℹ️ Aucune commande à synchroniser."
+      );
 
       return;
 
@@ -628,127 +420,16 @@ async function syncOrderStatuses() {
 
 
     console.log(
-      `🔄 NOSMYBOOST : ${orders.length} commande(s) à synchroniser.`
+      `🔎 ${orders.length} commande(s) à vérifier.`
     );
 
 
-    /*
-    Petite pause entre les requêtes
-    pour éviter les appels trop rapides.
-    */
-
     for (
-      const order
-      of orders
+      const order of orders
     ) {
 
-      try {
-
-        const provider =
-          await smmAfricaStatus(
-            order.provider_order_id
-          );
-
-
-        const newStatus =
-          normalizeStatus(
-            provider.status
-          );
-
-
-        console.log(
-          `📦 Commande #${order.id} | SMM #${order.provider_order_id} | ${provider.status} → ${newStatus}`
-        );
-
-
-        /*
-        ==============================
-        ANNULATION / ÉCHEC
-        ==============================
-        */
-
-        if (
-          newStatus === "canceled" ||
-          newStatus === "failed" ||
-          newStatus === "refunded"
-        ) {
-
-          /*
-          Si déjà refunded,
-          ne rien faire.
-          */
-
-          if (
-            order.status !==
-            "refunded"
-          ) {
-
-            try {
-
-              await refundOrderIfNeeded(
-                order.id
-              );
-
-
-              console.log(
-                `💰 Commande #${order.id} remboursée automatiquement.`
-              );
-
-
-            } catch (refundError) {
-
-              console.error(
-                `❌ Erreur remboursement #${order.id}:`,
-                refundError.message
-              );
-
-            }
-
-          }
-
-
-          continue;
-
-        }
-
-
-        /*
-        ==============================
-        STATUT NORMAL
-        ==============================
-        */
-
-        await updateOrderStatus(
-          order.id,
-          newStatus
-        );
-
-
-      } catch (error) {
-
-        /*
-        Une erreur de statut ne doit
-        PAS modifier la commande.
-        */
-
-        console.error(
-          `⚠️ Impossible de synchroniser #${order.id}:`,
-          error.message
-        );
-
-      }
-
-
-      /*
-      Pause 300 ms
-      */
-
-      await new Promise(
-        resolve =>
-          setTimeout(
-            resolve,
-            300
-          )
+      await syncOneOrder(
+        order
       );
 
     }
@@ -757,9 +438,14 @@ async function syncOrderStatuses() {
   } catch (error) {
 
     console.error(
-      "❌ Synchronisation commandes:",
-      error
+      "❌ Erreur synchronisation globale:",
+      error.message
     );
+
+
+  } finally {
+
+    syncRunning = false;
 
   }
 
@@ -768,40 +454,79 @@ async function syncOrderStatuses() {
 
 /*
 ========================================
-DÉMARRER LE POLLING
-========================================
-
-Toutes les 60 secondes.
+DÉMARRER LA SYNCHRONISATION
 ========================================
 */
 
 function startOrderStatusSync() {
 
   console.log(
-    "🚀 Synchronisation automatique des commandes activée."
+    "========================================"
+  );
+
+  console.log(
+    "NOSMYBOOST 🇧🇪"
+  );
+
+  console.log(
+    "SYNCHRONISATION COMMANDES ACTIVÉE"
+  );
+
+  console.log(
+    "Vérification toutes les 60 secondes"
+  );
+
+  console.log(
+    "========================================"
   );
 
 
   /*
-  Première synchronisation
+  PREMIÈRE VÉRIFICATION
   */
 
-  syncOrderStatuses();
+  syncOrders()
+    .catch(error => {
+
+      console.error(
+        "Erreur première synchronisation:",
+        error.message
+      );
+
+    });
 
 
   /*
-  Puis toutes les 60 secondes
+  PUIS TOUTES LES 60 SECONDES
   */
 
   setInterval(
-    syncOrderStatuses,
+    () => {
+
+      syncOrders()
+        .catch(error => {
+
+          console.error(
+            "Erreur synchronisation:",
+            error.message
+          );
+
+        });
+
+    },
     60 * 1000
   );
 
 }
 
 
+/*
+========================================
+EXPORT
+========================================
+*/
+
 module.exports = {
   startOrderStatusSync,
-  syncOrderStatuses
+  syncOrders
 };
