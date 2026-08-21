@@ -1,4 +1,8 @@
 const {
+  startOrderStatusSync
+} = require("./services/order-status");
+
+const {
   getServices
 } = require("./services/smm-africa");
 
@@ -215,6 +219,15 @@ console.log(
   "SMM_API_URL :",
   process.env.SMM_API_URL
 );
+
+/*
+========================================
+NOSMYBOOST🇧🇪
+SYNCHRONISATION COMMANDES
+========================================
+*/
+
+startOrderStatusSync();
 
 app.listen(
   PORT,
