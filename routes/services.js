@@ -2,15 +2,79 @@
 
 const express = require("express");
 const db = require("../database/database");
+const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
 
 /*
 ========================================
-NOSMYBOOST🇧🇪
-SERVICES
+NOSMYBOOST 🇧🇪
+SERVICES ROUTES
 ========================================
 */
+
+/*
+========================================
+NORMALISER PLATEFORME
+========================================
+*/
+
+function normalizePlatform(value) {
+
+  const text = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (text === "instagram")
+    return "Instagram";
+
+  if (text === "facebook")
+    return "Facebook";
+
+  if (text === "tiktok" || text === "tik tok")
+    return "TikTok";
+
+  if (
+    text === "youtube" ||
+    text === "youtube.com"
+  )
+    return "YouTube";
+
+  if (text === "telegram")
+    return "Telegram";
+
+  if (
+    text === "x" ||
+    text === "twitter" ||
+    text === "twitter/x"
+  )
+    return "X";
+
+  if (text === "snapchat")
+    return "Snapchat";
+
+  if (text === "whatsapp")
+    return "WhatsApp";
+
+  if (text === "spotify")
+    return "Spotify";
+
+  if (text === "linkedin")
+    return "LinkedIn";
+
+  if (text === "discord")
+    return "Discord";
+
+  if (
+    text === "site web" ||
+    text === "website" ||
+    text === "web"
+  )
+    return "Site Web";
+
+  return value;
+}
+
 
 /*
 ========================================
@@ -20,9 +84,10 @@ TOUS LES SERVICES
 
 router.get(
   "/",
+  authenticateToken,
   (req, res) => {
 
-    const platform =
+    const requestedPlatform =
       String(
         req.query.platform || ""
       ).trim();
@@ -51,19 +116,46 @@ router.get(
     ========================================
     */
 
-    if (platform) {
+    if (requestedPlatform) {
 
-      sql += `
-        AND LOWER(platform) = LOWER(?)
-      `;
+      const platform =
+        normalizePlatform(
+          requestedPlatform
+        );
 
-      params.push(platform);
+
+      /*
+      Pour X, accepter aussi Twitter
+      */
+
+      if (platform === "X") {
+
+        sql += `
+          AND (
+            LOWER(platform) = LOWER(?)
+            OR LOWER(platform) = 'twitter'
+          )
+        `;
+
+        params.push("X");
+
+      } else {
+
+        sql += `
+          AND LOWER(platform) = LOWER(?)
+        `;
+
+        params.push(platform);
+
+      }
 
     }
 
 
     sql += `
-      ORDER BY platform ASC, id ASC
+      ORDER BY
+        platform ASC,
+        id ASC
     `;
 
 
@@ -75,7 +167,7 @@ router.get(
         if (error) {
 
           console.error(
-            "Erreur récupération services:",
+            "❌ Erreur récupération services:",
             error
           );
 
@@ -91,11 +183,64 @@ router.get(
         }
 
 
+        /*
+        ========================================
+        NORMALISER LES PLATEFORMES RENVOYÉES
+        ========================================
+        */
+
+        const formattedServices =
+          (services || []).map(service => ({
+
+            id:
+              service.id,
+
+            platform:
+              normalizePlatform(
+                service.platform
+              ),
+
+            name:
+              service.name,
+
+            description:
+              service.description || "",
+
+            price:
+              Number(service.price || 0),
+
+            min_quantity:
+              Number(
+                service.min_quantity || 1
+              ),
+
+            max_quantity:
+              Number(
+                service.max_quantity || 1000000
+              )
+
+          }));
+
+
+        console.log(
+          `📦 Services envoyés : ${formattedServices.length}` +
+          (
+            requestedPlatform
+              ? ` | Plateforme : ${requestedPlatform}`
+              : ""
+          )
+        );
+
+
         return res.json({
 
           success: true,
 
-          services: services || []
+          count:
+            formattedServices.length,
+
+          services:
+            formattedServices
 
         });
 
@@ -114,6 +259,7 @@ SERVICE PAR ID
 
 router.get(
   "/:id",
+  authenticateToken,
   (req, res) => {
 
     const serviceId =
@@ -157,7 +303,7 @@ router.get(
         if (error) {
 
           console.error(
-            "Erreur récupération service:",
+            "❌ Erreur service:",
             error
           );
 
@@ -191,7 +337,36 @@ router.get(
 
           success: true,
 
-          service
+          service: {
+
+            id:
+              service.id,
+
+            platform:
+              normalizePlatform(
+                service.platform
+              ),
+
+            name:
+              service.name,
+
+            description:
+              service.description || "",
+
+            price:
+              Number(service.price || 0),
+
+            min_quantity:
+              Number(
+                service.min_quantity || 1
+              ),
+
+            max_quantity:
+              Number(
+                service.max_quantity || 1000000
+              )
+
+          }
 
         });
 
