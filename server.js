@@ -1,14 +1,4 @@
-const {
-  startOrderStatusSync
-} = require("./services/order-status");
-
-const {
-  getServices
-} = require("./services/smm-africa");
-
-const {
-  syncServices
-} = require("./scripts/sync-services");
+"use strict";
 
 const express = require("express");
 const path = require("path");
@@ -31,6 +21,21 @@ const depositRoutes =
 const adminRoutes =
   require("./routes/admin");
 
+const {
+  startOrderStatusSync
+} = require("./services/order-status");
+
+const {
+  syncServices
+} = require("./scripts/sync-services");
+
+
+/*
+========================================
+NOSMYBOOST🇧🇪
+SERVEUR PRINCIPAL
+========================================
+*/
 
 const app = express();
 
@@ -59,7 +64,7 @@ app.use(
 
 /*
 ========================================
-STATIC FILES
+FICHIERS PUBLICS
 ========================================
 */
 
@@ -75,7 +80,7 @@ app.use(
 
 /*
 ========================================
-API ROUTES
+ROUTES API
 ========================================
 */
 
@@ -186,10 +191,9 @@ app.use(
   (error, req, res, next) => {
 
     console.error(
-      "Erreur serveur:",
+      "❌ Erreur serveur:",
       error
     );
-
 
     res.status(500).json({
 
@@ -206,36 +210,56 @@ app.use(
 
 /*
 ========================================
-DÉMARRAGE
+CONFIGURATION SMM AFRICA
 ========================================
 */
 
 console.log(
+  "========================================"
+);
+
+console.log(
+  "NOSMYBOOST🇧🇪"
+);
+
+console.log(
   "SMM_API_KEY présente :",
-  Boolean(process.env.SMM_API_KEY)
+  Boolean(
+    process.env.SMM_API_KEY
+  )
 );
 
 console.log(
   "SMM_API_URL :",
-  process.env.SMM_API_URL
+  process.env.SMM_API_URL ||
+  "https://smm.africa/api/v3"
 );
+
+console.log(
+  "========================================"
+);
+
 
 /*
 ========================================
-NOSMYBOOST🇧🇪
-SYNCHRONISATION COMMANDES
+DÉMARRAGE DU SERVEUR
 ========================================
 */
-
-startOrderStatusSync();
 
 app.listen(
   PORT,
   async () => {
 
     console.log(
-      `NOSMYBOOST🇧🇪 lancé sur le port ${PORT}`
+      `🚀 NOSMYBOOST🇧🇪 lancé sur le port ${PORT}`
     );
+
+
+    /*
+    ========================================
+    SYNCHRONISATION DES SERVICES
+    ========================================
+    */
 
     try {
 
@@ -248,7 +272,31 @@ app.listen(
     } catch (error) {
 
       console.error(
-        "❌ Synchronisation SMM Africa échouée:",
+        "❌ Synchronisation services échouée:",
+        error.message
+      );
+
+    }
+
+
+    /*
+    ========================================
+    SYNCHRONISATION DES COMMANDES
+    ========================================
+    */
+
+    try {
+
+      startOrderStatusSync();
+
+      console.log(
+        "✅ Synchronisation automatique des commandes activée."
+      );
+
+    } catch (error) {
+
+      console.error(
+        "❌ Synchronisation commandes échouée:",
         error.message
       );
 
