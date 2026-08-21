@@ -2,6 +2,10 @@ const {
   getServices
 } = require("./services/smm-africa");
 
+const {
+  syncServices
+} = require("./scripts/sync-services");
+
 const express = require("express");
 const path = require("path");
 require("dotenv").config();
@@ -214,11 +218,28 @@ console.log(
 
 app.listen(
   PORT,
-  () => {
+  async () => {
 
     console.log(
       `NOSMYBOOST🇧🇪 lancé sur le port ${PORT}`
     );
+
+    try {
+
+      await syncServices();
+
+      console.log(
+        "✅ Services SMM Africa synchronisés."
+      );
+
+    } catch (error) {
+
+      console.error(
+        "❌ Synchronisation SMM Africa échouée:",
+        error.message
+      );
+
+    }
 
   }
 );
