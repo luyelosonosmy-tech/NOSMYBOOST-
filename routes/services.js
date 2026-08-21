@@ -1,11 +1,9 @@
+"use strict";
+
 const express = require("express");
 const db = require("../database/database");
 
 const router = express.Router();
-
-const authenticateToken =
-  require("../middleware/auth");
-
 
 /*
 ========================================
@@ -13,7 +11,6 @@ NOSMYBOOST🇧🇪
 SERVICES
 ========================================
 */
-
 
 /*
 ========================================
@@ -23,14 +20,12 @@ TOUS LES SERVICES
 
 router.get(
   "/",
-  authenticateToken,
   (req, res) => {
 
     const platform =
       String(
         req.query.platform || ""
-      )
-      .trim();
+      ).trim();
 
 
     let sql = `
@@ -51,16 +46,15 @@ router.get(
 
 
     /*
-    ================================
+    ========================================
     FILTRE PLATEFORME
-    ================================
+    ========================================
     */
 
     if (platform) {
 
       sql += `
-        AND LOWER(platform) =
-        LOWER(?)
+        AND LOWER(platform) = LOWER(?)
       `;
 
       params.push(platform);
@@ -81,7 +75,7 @@ router.get(
         if (error) {
 
           console.error(
-            "Erreur services:",
+            "Erreur récupération services:",
             error
           );
 
@@ -97,11 +91,11 @@ router.get(
         }
 
 
-        res.json({
+        return res.json({
 
           success: true,
 
-          services
+          services: services || []
 
         });
 
@@ -120,7 +114,6 @@ SERVICE PAR ID
 
 router.get(
   "/:id",
-  authenticateToken,
   (req, res) => {
 
     const serviceId =
@@ -164,7 +157,7 @@ router.get(
         if (error) {
 
           console.error(
-            "Erreur service:",
+            "Erreur récupération service:",
             error
           );
 
@@ -194,7 +187,7 @@ router.get(
         }
 
 
-        res.json({
+        return res.json({
 
           success: true,
 
@@ -208,5 +201,11 @@ router.get(
   }
 );
 
+
+/*
+========================================
+EXPORT
+========================================
+*/
 
 module.exports = router;
