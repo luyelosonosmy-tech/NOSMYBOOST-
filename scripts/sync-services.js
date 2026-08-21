@@ -536,19 +536,6 @@ async function syncServices() {
 LANCEMENT
 ========================================
 */
-
-syncServices()
-  .catch(error => {
-
-    console.error("");
-    console.error(
-      "❌ SYNCHRONISATION ÉCHOUÉE"
-    );
-
-    console.error(
-      error.message
-    );
-
-    process.exit(1);
-
-  });
+module.exports = {
+  syncServices
+};
