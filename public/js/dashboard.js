@@ -1,3 +1,5 @@
+"use strict";
+
 /*
 ========================================
 NOSMYBOOST🇧🇪
@@ -5,22 +7,13 @@ DASHBOARD JAVASCRIPT
 ========================================
 */
 
-const token =
-  localStorage.getItem("nosmyboost_token");
-
-
 /*
 ========================================
-VÉRIFICATION
+TOKEN
 ========================================
 */
 
-if (!token) {
-
-  window.location.href =
-    "/login.html";
-
-}
+const token = "";
 
 
 /*
@@ -65,16 +58,26 @@ API
 
 async function api(url) {
 
+  const headers = {};
+
+  /*
+  Si un token existe, on l'envoie.
+  */
+
+  if (token) {
+
+    headers.Authorization =
+      `Bearer ${token}`;
+
+  }
+
+
   const response =
     await fetch(
       url,
       {
         method: "GET",
-
-        headers: {
-          "Authorization":
-            `Bearer ${token}`
-        }
+        headers
       }
     );
 
@@ -82,25 +85,6 @@ async function api(url) {
   const data =
     await response.json()
       .catch(() => ({}));
-
-
-  if (
-    response.status === 401 ||
-    response.status === 403
-  ) {
-
-    localStorage.removeItem(
-      "nosmyboost_token"
-    );
-
-    window.location.href =
-      "/login.html";
-
-    throw new Error(
-      "Session expirée."
-    );
-
-  }
 
 
   if (!response.ok) {
@@ -141,14 +125,15 @@ async function loadDashboard() {
 
 
     const user =
-      profile.user;
+      profile.user || {};
 
 
     if (userName) {
 
       userName.textContent =
         user.name ||
-        user.email;
+        user.email ||
+        "Utilisateur";
 
     }
 
@@ -156,9 +141,8 @@ async function loadDashboard() {
     if (welcomeName) {
 
       welcomeName.textContent =
-        user.name
-          ? user.name
-          : "👋";
+        user.name ||
+        "👋";
 
     }
 
@@ -239,7 +223,7 @@ async function loadDashboard() {
   } catch (error) {
 
     console.error(
-      "Dashboard:",
+      "❌ Dashboard:",
       error
     );
 
@@ -275,8 +259,9 @@ COMMANDES RÉCENTES
 
 async function loadRecentOrders() {
 
-  if (!recentOrders)
+  if (!recentOrders) {
     return;
+  }
 
 
   try {
@@ -322,7 +307,7 @@ async function loadRecentOrders() {
 
     /*
     ==============================
-    LIMITER AUX 5 DERNIÈRES
+    5 DERNIÈRES COMMANDES
     ==============================
     */
 
@@ -352,7 +337,9 @@ async function loadRecentOrders() {
           <div>
 
             <strong>
-              Commande #${order.id}
+              Commande #${escapeHtml(
+                order.id
+              )}
             </strong>
 
             <p>
@@ -399,7 +386,7 @@ async function loadRecentOrders() {
   } catch (error) {
 
     console.error(
-      "Orders:",
+      "❌ Orders:",
       error
     );
 
@@ -411,7 +398,7 @@ async function loadRecentOrders() {
         <span>📦</span>
 
         <p>
-          Aucune commande
+          Impossible de charger les commandes.
         </p>
 
       </div>
@@ -435,9 +422,19 @@ if (logoutButton) {
     "click",
     () => {
 
+      /*
+      Nettoyage éventuel
+      */
+
       localStorage.removeItem(
         "nosmyboost_token"
       );
+
+
+      localStorage.removeItem(
+        "token"
+      );
+
 
       window.location.href =
         "/login.html";
@@ -454,9 +451,7 @@ FORMAT ARGENT
 ========================================
 */
 
-function formatMoney(
-  amount
-) {
+function formatMoney(amount) {
 
   return Number(
     amount || 0
@@ -477,9 +472,7 @@ STATUT
 ========================================
 */
 
-function formatStatus(
-  status
-) {
+function formatStatus(status) {
 
   const statuses = {
 
@@ -525,9 +518,7 @@ CLASSE STATUT
 ========================================
 */
 
-function getStatusClass(
-  status
-) {
+function getStatusClass(status) {
 
   const value =
     String(
@@ -575,9 +566,7 @@ SÉCURITÉ AFFICHAGE
 ========================================
 */
 
-function escapeHtml(
-  value
-) {
+function escapeHtml(value) {
 
   return String(
     value ?? ""
