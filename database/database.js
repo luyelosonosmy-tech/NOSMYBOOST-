@@ -47,19 +47,20 @@ db.serialize(() => {
   `);
 
   // COMMANDES
-  db.run(`
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      service_id INTEGER NOT NULL,
-      link TEXT NOT NULL,
-      quantity INTEGER NOT NULL,
-      price REAL NOT NULL,
-      status TEXT DEFAULT 'pending',
-      provider_service_id TEXT UNIQUE,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+db.run(`
+  CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    service_id INTEGER NOT NULL,
+    link TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    price REAL NOT NULL,
+    status TEXT DEFAULT 'pending',
+    provider_service_id TEXT,
+    provider_order_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
   // DÉPÔTS
   db.run(`
