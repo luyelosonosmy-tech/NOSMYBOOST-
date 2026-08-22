@@ -383,9 +383,6 @@ EXPORT
 ========================================
 */
 
-router.get(
-  "/debug/provider-services",
-  async (req, res) => {
     try {
       const rows = await new Promise((resolve, reject) => {
         db.all(
