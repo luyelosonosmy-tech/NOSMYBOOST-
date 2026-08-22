@@ -1,331 +1,1058 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <title>Recharger - NOSMYBOOST🇧🇪</title>
 
-  <title>Recharger le solde — NOSMYBOOST🇧🇪</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  <link
-    rel="stylesheet"
-    href="/css/style.css"
-  >
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #172033;
+    }
 
+    header {
+      background: #111827;
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    header .logo {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+    }
+
+    nav a:hover {
+      background: rgba(255,255,255,.16);
+    }
+
+    .logout {
+      border: 0;
+      background: #ef4444;
+      color: white;
+      padding: 9px 13px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .container {
+      width: min(100% - 30px, 850px);
+      margin: 30px auto;
+    }
+
+    .title {
+      margin-bottom: 20px;
+    }
+
+    .title h1 {
+      margin-bottom: 8px;
+    }
+
+    .title p {
+      color: #667085;
+      margin: 0;
+    }
+
+    .balance {
+      background: linear-gradient(135deg, #111827, #1f2937);
+      color: white;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 25px rgba(0,0,0,.08);
+    }
+
+    .balance-label {
+      opacity: .8;
+      font-size: 14px;
+    }
+
+    .balance-value {
+      margin-top: 7px;
+      font-size: 30px;
+      font-weight: bold;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 5px 20px rgba(0,0,0,.06);
+    }
+
+    .card h2 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 15px 0 7px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d0d5dd;
+      border-radius: 9px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #2563eb;
+    }
+
+    .payment-info {
+      display: none;
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #dbe2ea;
+    }
+
+    .payment-info.active {
+      display: block;
+    }
+
+    .payment-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .payment-number {
+      font-size: 21px;
+      font-weight: bold;
+      margin: 8px 0;
+    }
+
+    .warning {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      padding: 12px;
+      border-radius: 9px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .btn {
+      width: 100%;
+      border: 0;
+      background: #2563eb;
+      color: white;
+      padding: 14px;
+      margin-top: 20px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #1d4ed8;
+    }
+
+    .btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .message {
+      display: none;
+      margin-top: 15px;
+      padding: 13px;
+      border-radius: 9px;
+      font-weight: bold;
+    }
+
+    .message.success {
+      display: block;
+      background: #ecfdf3;
+      color: #027a48;
+      border: 1px solid #abefc6;
+    }
+
+    .message.error {
+      display: block;
+      background: #fef3f2;
+      color: #b42318;
+      border: 1px solid #fecdca;
+    }
+
+    .deposit {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+
+    .deposit strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .empty {
+      text-align: center;
+      color: #667085;
+      padding: 20px;
+    }
+
+    .small {
+      color: #667085;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+  </style>
 </head>
-
 
 <body>
 
-  <!-- =================================
-       NAVIGATION
-  ================================== -->
+<header>
 
-  <header class="navbar">
+  <div class="logo">
+    NOSMYBOOST🇧🇪
+  </div>
 
-    <div class="container nav-content">
+  <nav>
+    <a href="/dashboard.html">Accueil</a>
+    <a href="/deposit.html">Recharger</a>
+    <a href="/orders.html">Commandes</a>
+    <button class="logout" onclick="logout()">Déconnexion</button>
+  </nav>
 
-      <a
-        href="/dashboard.html"
-        class="logo"
-      >
-        NOSMYBOOST🇧🇪
-      </a>
-
-
-      <nav class="dashboard-nav">
-
-        <a href="/dashboard.html">
-          Accueil
-        </a>
-
-        <a href="/deposit.html">
-          Recharger
-        </a>
-
-        <a href="/orders.html">
-          Commandes
-        </a>
-
-      </nav>
+</header>
 
 
-      <button
-        id="logoutButton"
-        type="button"
-        class="btn btn-outline"
-      >
-        Déconnexion
-      </button>
+<main class="container">
 
+  <div class="title">
+    <h1>Recharger le solde</h1>
+
+    <p>
+      Choisissez votre moyen de paiement, effectuez le transfert
+      puis envoyez votre demande de confirmation.
+    </p>
+  </div>
+
+
+  <!-- SOLDE -->
+
+  <section class="balance">
+
+    <div class="balance-label">
+      Votre solde actuel
     </div>
 
-  </header>
+    <div
+      id="balance"
+      class="balance-value"
+    >
+      Chargement...
+    </div>
+
+  </section>
 
 
-  <!-- =================================
-       DÉPÔT
-  ================================== -->
+  <!-- DEPOT -->
 
-  <main>
+  <section class="card">
 
-    <section class="deposit-section">
+    <h2>Effectuer un dépôt</h2>
 
-      <div class="container">
+    <p>
+      Après votre paiement, envoyez les informations demandées
+      afin qu'un administrateur puisse confirmer votre dépôt.
+    </p>
 
 
-        <div class="section-title">
+    <form id="depositForm">
 
-          <span>
-            NOSMYBOOST🇧🇪
-          </span>
+      <label for="amount">
+        Montant
+      </label>
 
-          <h1>
-            Recharger le solde
-          </h1>
+      <input
+        id="amount"
+        type="number"
+        min="1000"
+        step="1"
+        placeholder="Ex. 2500"
+        required
+      >
 
-          <p>
-            Choisissez votre moyen de paiement,
-            effectuez le transfert puis envoyez
-            votre demande de confirmation.
-          </p>
+      <div class="small">
+        Montant en CDF. Minimum : 1000 CDF.
+      </div>
 
+
+      <label for="method">
+        Moyen de paiement
+      </label>
+
+      <select id="method" required>
+
+        <option value="">
+          Choisissez un moyen de paiement
+        </option>
+
+        <option value="Airtel Money">
+          🔴 Airtel Money
+        </option>
+
+        <option value="Vodacom M-Pesa">
+          🟢 Vodacom M-Pesa
+        </option>
+
+        <option value="Orange Money">
+          🟠 Orange Money
+        </option>
+
+      </select>
+
+
+      <!-- AIRTEL -->
+
+      <div
+        id="airtelInfo"
+        class="payment-info"
+      >
+
+        <div class="payment-title">
+          🔴 Airtel Money
         </div>
 
-
-        <!-- =================================
-             SOLDE ACTUEL
-        ================================== -->
-
-        <div class="balance-box deposit-balance">
-
-          <span>
-            Votre solde actuel
-          </span>
-
-          <strong id="currentBalance">
-            Chargement...
-          </strong>
-
+        <div>
+          Envoyez votre paiement au numéro :
         </div>
 
-
-        <!-- =================================
-             FORMULAIRE DÉPÔT
-        ================================== -->
-
-        <div class="deposit-card">
-
-
-          <h2>
-            Effectuer un dépôt
-          </h2>
-
-
-          <p class="deposit-info">
-
-            Après votre paiement, envoyez les
-            informations demandées afin qu'un
-            administrateur puisse confirmer votre
-            dépôt.
-
-          </p>
-
-
-          <!-- MONTANT -->
-
-          <div class="form-group">
-
-            <label for="amount">
-              Montant
-            </label>
-
-            <input
-              type="number"
-              id="amount"
-              name="amount"
-              min="1"
-              step="1"
-              placeholder="Ex. 5000"
-              required
-            >
-
-            <small>
-              Montant en CDF.
-            </small>
-
-          </div>
-
-
-          <!-- =================================
-               MÉTHODE
-          ================================== -->
-
-          <div class="form-group">
-
-            <label for="method">
-              Moyen de paiement
-            </label>
-
-            <select
-              id="method"
-              name="method"
-              required
-            >
-
-              <option
-                value=""
-                selected
-                disabled
-              >
-                Choisissez un moyen de paiement
-              </option>
-
-
-              <option value="airtel">
-                🔴 Airtel Money
-              </option>
-
-
-              <option value="mpesa">
-                🟢 Vodacom M-Pesa
-              </option>
-
-
-              <option value="orange">
-                🟠 Orange Money
-              </option>
-
-            </select>
-
-          </div>
-
-
-          <!-- =================================
-               INFORMATIONS PAIEMENT
-          ================================== -->
-
-          <div
-            id="paymentInstructions"
-            class="payment-instructions"
-          >
-
-            <p>
-              Choisissez un moyen de paiement
-              pour voir les instructions.
-            </p>
-
-          </div>
-
-
-          <!-- =================================
-               PREUVE
-          ================================== -->
-
-          <div class="form-group">
-
-            <label for="proof">
-              Référence / preuve du paiement
-            </label>
-
-            <input
-              type="text"
-              id="proof"
-              name="proof"
-              placeholder="Ex. ID de transaction"
-              maxlength="200"
-              required
-            >
-
-            <small>
-              Indiquez la référence visible après
-              votre paiement.
-            </small>
-
-          </div>
-
-
-          <!-- =================================
-               MESSAGE
-          ================================== -->
-
-          <div
-            id="depositMessage"
-            aria-live="polite"
-          ></div>
-
-
-          <!-- =================================
-               BOUTON
-          ================================== -->
-
-          <button
-            type="submit"
-            id="depositButton"
-            class="btn btn-primary"
-          >
-            Envoyer la demande
-          </button>
-
-
+        <div class="payment-number">
+          NUMÉRO AIRTEL À CONFIGURER
         </div>
 
+        <div>
+          Nom du bénéficiaire :
+          <strong>NOSMYBOOST🇧🇪</strong>
+        </div>
 
-        <!-- =================================
-             HISTORIQUE
-        ================================== -->
-
-        <section class="deposit-history">
-
-          <div class="section-title">
-
-            <span>
-              HISTORIQUE
-            </span>
-
-            <h2>
-              Mes dépôts
-            </h2>
-
-          </div>
-
-
-          <div
-            id="depositHistory"
-            class="orders-list"
-          >
-
-            <div class="empty-state">
-
-              <span>
-                💳
-              </span>
-
-              <p>
-                Aucun dépôt pour le moment.
-              </p>
-
-            </div>
-
-          </div>
-
-        </section>
-
+        <div class="warning">
+          ⚠️ Vérifiez toujours le numéro et le nom du
+          bénéficiaire avant de confirmer votre paiement.
+        </div>
 
       </div>
 
-    </section>
 
-  </main>
+      <!-- MPESA -->
+
+      <div
+        id="mpesaInfo"
+        class="payment-info"
+      >
+
+        <div class="payment-title">
+          🟢 Vodacom M-Pesa
+        </div>
+
+        <div>
+          Envoyez votre paiement au numéro :
+        </div>
+
+        <div class="payment-number">
+          NUMÉRO MPESA À CONFIGURER
+        </div>
+
+        <div>
+          Nom du bénéficiaire :
+          <strong>NOSMYBOOST🇧🇪</strong>
+        </div>
+
+        <div class="warning">
+          ⚠️ Vérifiez toujours le numéro et le nom du
+          bénéficiaire avant de confirmer votre paiement.
+        </div>
+
+      </div>
 
 
-  <script src="/js/deposit.js"></script>
+      <!-- ORANGE -->
+
+      <div
+        id="orangeInfo"
+        class="payment-info"
+      >
+
+        <div class="payment-title">
+          🟠 Orange Money
+        </div>
+
+        <div>
+          Envoyez votre paiement au numéro :
+        </div>
+
+        <div class="payment-number">
+          NUMÉRO ORANGE À CONFIGURER
+        </div>
+
+        <div>
+          Nom du bénéficiaire :
+          <strong>NOSMYBOOST🇧🇪</strong>
+        </div>
+
+        <div class="warning">
+          ⚠️ Vérifiez toujours le numéro et le nom du
+          bénéficiaire avant de confirmer votre paiement.
+        </div>
+
+      </div>
+
+
+      <label for="proof">
+        Référence / preuve du paiement
+      </label>
+
+      <input
+        id="proof"
+        type="text"
+        placeholder="Ex. ID de transaction"
+        required
+      >
+
+      <div class="small">
+        Indiquez la référence visible après votre paiement.
+      </div>
+
+
+      <button
+        id="submitBtn"
+        class="btn"
+        type="submit"
+      >
+        Envoyer la demande
+      </button>
+
+    </form>
+
+
+    <div
+      id="message"
+      class="message"
+    ></div>
+
+  </section>
+
+
+  <!-- HISTORIQUE -->
+
+  <section class="card">
+
+    <h2>Mes dépôts</h2>
+
+    <div id="history">
+      Chargement...
+    </div>
+
+  </section>
+
+</main>
+
+
+<script>
+
+"use strict";
+
+
+/*
+========================================
+AUTHENTIFICATION
+========================================
+*/
+
+const token =
+  localStorage.getItem("token");
+
+
+if (!token) {
+
+  window.location.href =
+    "/login.html";
+
+}
+
+
+/*
+========================================
+ELEMENTS
+========================================
+*/
+
+const balanceElement =
+  document.getElementById("balance");
+
+const methodElement =
+  document.getElementById("method");
+
+const amountElement =
+  document.getElementById("amount");
+
+const proofElement =
+  document.getElementById("proof");
+
+const form =
+  document.getElementById("depositForm");
+
+const message =
+  document.getElementById("message");
+
+const submitBtn =
+  document.getElementById("submitBtn");
+
+const historyElement =
+  document.getElementById("history");
+
+
+/*
+========================================
+INSTRUCTIONS PAIEMENT
+========================================
+*/
+
+const airtelInfo =
+  document.getElementById("airtelInfo");
+
+const mpesaInfo =
+  document.getElementById("mpesaInfo");
+
+const orangeInfo =
+  document.getElementById("orangeInfo");
+
+
+methodElement.addEventListener(
+  "change",
+  function () {
+
+    airtelInfo.classList.remove("active");
+
+    mpesaInfo.classList.remove("active");
+
+    orangeInfo.classList.remove("active");
+
+
+    if (
+      this.value === "Airtel Money"
+    ) {
+
+      airtelInfo.classList.add("active");
+
+    }
+
+
+    if (
+      this.value === "Vodacom M-Pesa"
+    ) {
+
+      mpesaInfo.classList.add("active");
+
+    }
+
+
+    if (
+      this.value === "Orange Money"
+    ) {
+
+      orangeInfo.classList.add("active");
+
+    }
+
+  }
+);
+
+
+/*
+========================================
+MESSAGE
+========================================
+*/
+
+function showMessage(
+  text,
+  type
+) {
+
+  message.textContent =
+    text;
+
+  message.className =
+    "message " + type;
+
+}
+
+
+/*
+========================================
+CHARGER SOLDE
+========================================
+*/
+
+async function loadBalance() {
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/auth/me",
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.message ||
+        "Impossible de récupérer le solde."
+      );
+
+    }
+
+
+    const user =
+      data.user || data;
+
+
+    const balance =
+      Number(
+        user.balance || 0
+      );
+
+
+    balanceElement.textContent =
+      balance.toLocaleString(
+        "fr-FR"
+      ) + " CDF";
+
+
+  } catch (error) {
+
+    console.error(
+      "Erreur solde:",
+      error
+    );
+
+    balanceElement.textContent =
+      "0 CDF";
+
+  }
+
+}
+
+
+/*
+========================================
+HISTORIQUE DEPOTS
+========================================
+*/
+
+async function loadDeposits() {
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/deposits",
+        {
+          headers: {
+            Authorization:
+              "Bearer " + token
+          }
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.message ||
+        "Impossible de récupérer les dépôts."
+      );
+
+    }
+
+
+    const deposits =
+      data.deposits || [];
+
+
+    if (!deposits.length) {
+
+      historyElement.innerHTML =
+        `
+        <div class="empty">
+          💳<br>
+          Aucun dépôt pour le moment.
+        </div>
+        `;
+
+      return;
+
+    }
+
+
+    historyElement.innerHTML =
+      deposits.map(
+        deposit => {
+
+          const amount =
+            Number(
+              deposit.amount || 0
+            ).toLocaleString(
+              "fr-FR"
+            );
+
+
+          const status =
+            deposit.status ||
+            "pending";
+
+
+          return `
+            <div class="deposit">
+
+              <strong>
+                ${amount} CDF
+              </strong>
+
+              <div>
+                ${escapeHtml(
+                  deposit.method || ""
+                )}
+              </div>
+
+              <div>
+                Référence :
+                ${escapeHtml(
+                  deposit.proof || "-"
+                )}
+              </div>
+
+              <span class="status">
+                ${escapeHtml(status)}
+              </span>
+
+            </div>
+          `;
+
+        }
+      ).join("");
+
+
+  } catch (error) {
+
+    console.error(
+      "Erreur historique:",
+      error
+    );
+
+    historyElement.innerHTML =
+      `
+      <div class="empty">
+        Impossible de charger l'historique.
+      </div>
+      `;
+
+  }
+
+}
+
+
+/*
+========================================
+ENVOI DEPOT
+========================================
+*/
+
+form.addEventListener(
+  "submit",
+  async function (event) {
+
+    event.preventDefault();
+
+
+    const amount =
+      Number(
+        amountElement.value
+      );
+
+    const method =
+      methodElement.value.trim();
+
+    const proof =
+      proofElement.value.trim();
+
+
+    if (
+      !amount ||
+      amount < 1000
+    ) {
+
+      showMessage(
+        "Le montant minimum est de 1000 CDF.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    if (!method) {
+
+      showMessage(
+        "Choisissez un moyen de paiement.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    if (!proof) {
+
+      showMessage(
+        "Entrez la référence de votre paiement.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    submitBtn.disabled =
+      true;
+
+    submitBtn.textContent =
+      "Envoi en cours...";
+
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/deposits",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                "Bearer " + token
+            },
+
+            body: JSON.stringify({
+
+              amount:
+                amount,
+
+              method:
+                method,
+
+              proof:
+                proof
+
+            })
+
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          data.message ||
+          "Erreur lors de l'envoi."
+        );
+
+      }
+
+
+      showMessage(
+        data.message ||
+        "Demande de dépôt envoyée avec succès. Elle sera vérifiée par un administrateur.",
+        "success"
+      );
+
+
+      form.reset();
+
+
+      airtelInfo.classList.remove("active");
+
+      mpesaInfo.classList.remove("active");
+
+      orangeInfo.classList.remove("active");
+
+
+      await loadDeposits();
+
+      await loadBalance();
+
+
+    } catch (error) {
+
+      console.error(
+        "Erreur dépôt:",
+        error
+      );
+
+      showMessage(
+        error.message ||
+        "Impossible d'envoyer la demande.",
+        "error"
+      );
+
+
+    } finally {
+
+      submitBtn.disabled =
+        false;
+
+      submitBtn.textContent =
+        "Envoyer la demande";
+
+    }
+
+  }
+);
+
+
+/*
+========================================
+SECURITE AFFICHAGE TEXTE
+========================================
+*/
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+/*
+========================================
+DECONNEXION
+========================================
+*/
+
+function logout() {
+
+  localStorage.removeItem(
+    "token"
+  );
+
+  localStorage.removeItem(
+    "user"
+  );
+
+  window.location.href =
+    "/login.html";
+
+}
+
+
+/*
+========================================
+DEMARRAGE
+========================================
+*/
+
+loadBalance();
+
+loadDeposits();
+
+</script>
 
 </body>
-
   </html>
