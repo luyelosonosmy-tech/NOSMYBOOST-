@@ -385,7 +385,6 @@ EXPORT
 
 router.get(
   "/debug/provider-services",
-  authenticateToken,
   async (req, res) => {
     try {
       const rows = await new Promise((resolve, reject) => {
