@@ -514,7 +514,6 @@ const services = [
     max_quantity: 5000000,
     provider_service_id: ""
   },
-  
 ];
 
 
