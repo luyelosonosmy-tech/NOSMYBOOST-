@@ -383,4 +383,56 @@ EXPORT
 ========================================
 */
 
+router.get(
+  "/debug/provider-services",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const rows = await new Promise((resolve, reject) => {
+        db.all(
+          `
+          SELECT
+            id,
+            platform,
+            name,
+            price,
+            min_quantity,
+            max_quantity,
+            provider,
+            provider_service_id,
+            active
+          FROM services
+          WHERE active = 1
+            AND provider_service_id IS NOT NULL
+            AND TRIM(provider_service_id) != ''
+          LIMIT 10
+          `,
+          [],
+          (error, rows) => {
+            if (error) return reject(error);
+            resolve(rows);
+          }
+        );
+      });
+
+      return res.json({
+        success: true,
+        count: rows.length,
+        services: rows
+      });
+
+    } catch (error) {
+      console.error(
+        "Erreur debug provider services:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+);
+
 module.exports = router;
