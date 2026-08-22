@@ -321,6 +321,200 @@ const services = [
     provider_service_id: ""
   }
 
+  // =====================================
+  // YOUTUBE
+  // =====================================
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Views + Likes | 15 min | 100% Concurrent",
+    description: "Max 5M • Instant • Stay time 15 min",
+    price: 2500,
+    min_quantity: 50,
+    max_quantity: 5000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Views + Likes | 15 min | Concurrent",
+    description: "Max 5M • 100% Concurrent • 15 Minutes",
+    price: 3000,
+    min_quantity: 50,
+    max_quantity: 5000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Views + Likes | 30 min | 100% Concurrent",
+    description: "Max 5M • Instant • Stay time 30 min",
+    price: 2500,
+    min_quantity: 50,
+    max_quantity: 5000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Views + Likes | 30 min | Concurrent",
+    description: "Max 5M • 100% Concurrent • 30 Minutes",
+    price: 1500,
+    min_quantity: 50,
+    max_quantity: 5000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Reaction ❤️",
+    description: "Live Stream Reaction • Best Speed & Quality",
+    price: 1000,
+    min_quantity: 100,
+    max_quantity: 1000000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Reaction 🎉",
+    description: "Live Stream Reaction • Best Speed & Quality",
+    price: 1000,
+    min_quantity: 100,
+    max_quantity: 1000000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Reaction 💯",
+    description: "Live Stream Reaction • Best Speed & Quality",
+    price: 484,
+    min_quantity: 100,
+    max_quantity: 1000000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Reaction 😄",
+    description: "Live Stream Reaction • Best Speed & Quality",
+    price: 484,
+    min_quantity: 100,
+    max_quantity: 1000000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Reaction 😳",
+    description: "Live Stream Reaction • Best Speed & Quality",
+    price: 484,
+    min_quantity: 100,
+    max_quantity: 1000000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Reaction Random ❤️😃🎉😳💯",
+    description: "Random Live Stream Reactions • Best Speed & Quality",
+    price: 1000,
+    min_quantity: 100,
+    max_quantity: 1000000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Under Comment Like | 10K | No Refill",
+    description: "Max 10K • 10K/day • Instant • No Refill",
+    price: 3000,
+    min_quantity: 10,
+    max_quantity: 10000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Comment Like | 100K | No Refill",
+    description: "Max 100K • 30K/day • Instant • No Refill",
+    price: 4000,
+    min_quantity: 10,
+    max_quantity: 100000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Views + Likes | 60 min",
+    description: "Max 5M • 100% Concurrent • Stay time 60 min",
+    price: 4000,
+    min_quantity: 50,
+    max_quantity: 5000000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Under Comment Like | 1K | No Refill",
+    description: "Max 1K • 1K/day • Instant • No Refill",
+    price: 4000,
+    min_quantity: 10,
+    max_quantity: 1000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Under Comment Like | 10K | Refill 30D",
+    description: "Max 10K • 10K/day • Instant • Refill 30D",
+    price: 1500,
+    min_quantity: 10,
+    max_quantity: 10000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Comment Like | 100K | Refill 30D",
+    description: "Max 100K • 30K/day • Instant • Refill 30D",
+    price: 2000,
+    min_quantity: 10,
+    max_quantity: 100000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Under Comment Like | 5K | Refill 30D",
+    description: "Max 5K • 5K/day • Instant • Refill 30D",
+    price: 3500,
+    min_quantity: 10,
+    max_quantity: 5000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Under Comment Like | 10K | Lifetime",
+    description: "Max 10K • 10K/day • Instant • Lifetime",
+    price: 4000,
+    min_quantity: 10,
+    max_quantity: 10000,
+    provider_service_id: ""
+  },
+
+  {
+    platform: "YouTube",
+    name: "YouTube Live Stream Views + Likes | 60 min | 100% Concurrent",
+    description: "Max 5M • 100% Concurrent • 60 Minutes",
+    price: 5000,
+    min_quantity: 50,
+    max_quantity: 5000000,
+    provider_service_id: ""
+  },
+  
 ];
 
 
