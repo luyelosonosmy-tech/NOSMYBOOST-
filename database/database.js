@@ -92,16 +92,18 @@ db.serialize(() => {
   */
 
   db.run(`
-    CREATE TABLE IF NOT EXISTS deposits (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      amount REAL NOT NULL,
-      method TEXT NOT NULL,
-      proof TEXT,
-      status TEXT DEFAULT 'pending',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  CREATE TABLE IF NOT EXISTS deposits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    method TEXT NOT NULL,
+    proof TEXT,
+    status TEXT DEFAULT 'pending',
+    provider TEXT,
+    provider_payment_id TEXT UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
 
   /*
