@@ -1,23 +1,14 @@
 "use strict";
 
-const token =
-  localStorage.getItem("nosmyboost_token");
-
-const WHATSAPP =
-  "243843066709";
-
 /*
-IMPORTANT :
-Mets ici le vrai lien Chariow
-qui correspond au produit/recharge.
+========================================
+NOSMYBOOST 🇧🇪
+DEPOSIT JAVASCRIPT
+========================================
 */
 
-const CHARIOW_URL =
-  "TON_VRAI_LIEN_CHARIOW_ICI";
-
-
-let selectedAmount = 2500;
-let selectedUsd = 1;
+const CHARIOW_CHECKOUT_URL =
+  "https://iayzxtqb.mychariow.co/prd_szcsq1ct/checkout";
 
 
 /*
@@ -26,185 +17,144 @@ let selectedUsd = 1;
 ========================================
 */
 
-const currentBalance =
-  document.getElementById("currentBalance");
+const depositForm =
+  document.getElementById("depositForm");
 
-const selectedAmountElement =
-  document.getElementById("selectedAmount");
+const amountInput =
+  document.getElementById("amount");
 
-const selectedUsdElement =
-  document.getElementById("selectedUsd");
+const paymentMethod =
+  document.getElementById("paymentMethod");
 
-const payButton =
-  document.getElementById("payButton");
+const paymentInstructions =
+  document.getElementById("paymentInstructions");
 
-const whatsappButton =
-  document.getElementById("whatsappButton");
+const referenceInput =
+  document.getElementById("reference");
 
-const manualWhatsapp =
-  document.getElementById("manualWhatsapp");
+const balanceElement =
+  document.getElementById("balance");
 
-const depositHistory =
-  document.getElementById("depositHistory");
+const depositsList =
+  document.getElementById("depositsList");
 
-const userName =
-  document.getElementById("userName");
-
-const logoutButton =
-  document.getElementById("logoutButton");
+const submitButton =
+  depositForm
+    ? depositForm.querySelector(
+        'button[type="submit"]'
+      )
+    : null;
 
 
 /*
 ========================================
-FORMAT
+TAUX / MONTANT
 ========================================
 */
 
-function formatMoney(amount) {
+const MIN_AMOUNT = 1000;
 
-  return Number(
-    amount || 0
-  ).toLocaleString(
-    "fr-FR"
+
+/*
+========================================
+TOKEN
+========================================
+*/
+
+const token =
+  localStorage.getItem(
+    "nosmyboost_token"
   );
 
-}
-
 
 /*
 ========================================
-WHATSAPP
+API
 ========================================
 */
 
-function whatsappLink(amount) {
+async function api(
+  url,
+  options = {}
+) {
 
-  const message =
-    `Bonjour NOSMYBOOST🇧🇪, je souhaite recharger mon solde de ${formatMoney(amount)} CDF. Merci de m'indiquer la procédure de paiement manuel.`;
+  const response =
+    await fetch(
+      url,
+      {
+        ...options,
 
-  return `https://wa.me/${WHATSAPP}?text=${
-    encodeURIComponent(message)
-  }`;
+        headers: {
+          ...(options.headers || {}),
 
-}
+          "Authorization":
+            `Bearer ${token}`,
 
-
-/*
-========================================
-METTRE À JOUR LE MONTANT
-========================================
-*/
-
-function updatePayment() {
-
-  selectedAmountElement.textContent =
-    `${formatMoney(selectedAmount)} CDF`;
-
-  selectedUsdElement.textContent =
-    `$${Number(selectedUsd).toFixed(2)} USD`;
+          "Content-Type":
+            "application/json"
+        }
+      }
+    );
 
 
-  payButton.textContent =
-    `💳 Payer ${formatMoney(selectedAmount)} CDF`;
+  const data =
+    await response
+      .json()
+      .catch(() => ({}));
 
-
-  /*
-  Si tu as un vrai lien Chariow
-  */
 
   if (
-    CHARIOW_URL &&
-    !CHARIOW_URL.includes(
-      "TON_VRAI_LIEN"
-    )
+    response.status === 401 ||
+    response.status === 403
   ) {
 
-    payButton.href =
-      CHARIOW_URL;
+    localStorage.removeItem(
+      "nosmyboost_token"
+    );
 
-  } else {
+    window.location.href =
+      "/login.html";
 
-    payButton.href =
-      whatsappLink(selectedAmount);
+    throw new Error(
+      "Session expirée."
+    );
 
   }
 
 
-  whatsappButton.href =
-    whatsappLink(selectedAmount);
+  if (!response.ok) {
 
-
-  manualWhatsapp.href =
-    whatsappLink(selectedAmount);
-
-}
-
-
-/*
-========================================
-CHOIX MONTANT
-========================================
-*/
-
-document
-  .querySelectorAll(".amount-btn")
-  .forEach(button => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        document
-          .querySelectorAll(".amount-btn")
-          .forEach(btn => {
-
-            btn.classList.remove(
-              "active"
-            );
-
-          });
-
-
-        button.classList.add(
-          "active"
-        );
-
-
-        selectedAmount =
-          Number(
-            button.dataset.amount
-          );
-
-
-        selectedUsd =
-          Number(
-            button.dataset.usd
-          );
-
-
-        updatePayment();
-
-      }
+    throw new Error(
+      data.message ||
+      "Erreur serveur."
     );
 
-  });
+  }
+
+
+  return data;
+
+}
 
 
 /*
 ========================================
-PREMIER MONTANT
+FORMAT ARGENT
 ========================================
 */
 
-const firstAmount =
-  document.querySelector(
-    ".amount-btn"
-  );
+function formatMoney(
+  amount
+) {
 
-if (firstAmount) {
-
-  firstAmount.classList.add(
-    "active"
+  return Number(
+    amount || 0
+  ).toLocaleString(
+    "fr-FR",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }
   );
 
 }
@@ -212,70 +162,244 @@ if (firstAmount) {
 
 /*
 ========================================
-CHARGER PROFIL
+CHARGER LE SOLDE
 ========================================
 */
 
-async function loadProfile() {
+async function loadBalance() {
 
   try {
 
-    const response =
-      await fetch(
-        "/api/auth/me",
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
-        }
-      );
-
-
     const data =
-      await response.json();
-
-
-    if (
-      !response.ok
-    ) {
-
-      throw new Error(
-        data.message ||
-        "Impossible de charger le profil."
+      await api(
+        "/api/auth/me"
       );
-
-    }
 
 
     const user =
       data.user || {};
 
 
-    if (userName) {
-
-      userName.textContent =
-        user.name ||
-        user.email ||
-        "";
-
-    }
+    const balance =
+      Number(
+        user.balance || 0
+      );
 
 
-    if (currentBalance) {
+    if (balanceElement) {
 
-      currentBalance.textContent =
-        `${formatMoney(
-          user.balance
-        )} CDF`;
+      balanceElement.textContent =
+        `${formatMoney(balance)} CDF`;
 
     }
 
   } catch (error) {
 
     console.error(
-      "Profil:",
+      "Erreur solde:",
       error
+    );
+
+    if (balanceElement) {
+
+      balanceElement.textContent =
+        "0 CDF";
+
+    }
+
+  }
+
+}
+
+
+/*
+========================================
+INSTRUCTIONS PAIEMENT
+========================================
+*/
+
+function showPaymentInstructions() {
+
+  if (!paymentInstructions)
+    return;
+
+
+  const method =
+    paymentMethod
+      ? paymentMethod.value
+      : "";
+
+
+  if (!method) {
+
+    paymentInstructions.innerHTML = `
+      <p>
+        Choisissez un moyen de paiement
+        pour voir les instructions.
+      </p>
+    `;
+
+    return;
+
+  }
+
+
+  if (
+    method === "airtel" ||
+    method === "Airtel Money"
+  ) {
+
+    paymentInstructions.innerHTML = `
+      <div class="payment-box">
+
+        <strong>
+          🔴 Airtel Money
+        </strong>
+
+        <p>
+          Effectuez votre paiement,
+          puis utilisez la référence
+          de transaction pour confirmer
+          votre recharge.
+        </p>
+
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  if (
+    method === "mpesa" ||
+    method === "Vodacom M-Pesa"
+  ) {
+
+    paymentInstructions.innerHTML = `
+      <div class="payment-box">
+
+        <strong>
+          🟢 Vodacom M-Pesa
+        </strong>
+
+        <p>
+          Effectuez votre paiement,
+          puis utilisez la référence
+          de transaction pour confirmer
+          votre recharge.
+        </p>
+
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  if (
+    method === "orange" ||
+    method === "Orange Money"
+  ) {
+
+    paymentInstructions.innerHTML = `
+      <div class="payment-box">
+
+        <strong>
+          🟠 Orange Money
+        </strong>
+
+        <p>
+          Effectuez votre paiement,
+          puis utilisez la référence
+          de transaction pour confirmer
+          votre recharge.
+        </p>
+
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  paymentInstructions.innerHTML = `
+    <p>
+      Choisissez un moyen de paiement
+      valide.
+    </p>
+  `;
+
+}
+
+
+/*
+========================================
+BOUTON CHARIOW
+========================================
+*/
+
+function createChariowButton() {
+
+  const container =
+    document.getElementById(
+      "chariowPayment"
+    );
+
+
+  if (!container)
+    return;
+
+
+  container.innerHTML = `
+
+    <div class="chariow-box">
+
+      <h3>
+        ⚡ Paiement automatique
+      </h3>
+
+      <p>
+        Rechargez votre compte NOSMYBOOST
+        directement avec Chariow.
+      </p>
+
+      <button
+        type="button"
+        id="chariowButton"
+        class="btn btn-primary"
+      >
+        💳 Payer 2 500 CDF
+      </button>
+
+      <p class="small-text">
+        Après confirmation du paiement,
+        votre recharge sera traitée.
+      </p>
+
+    </div>
+
+  `;
+
+
+  const button =
+    document.getElementById(
+      "chariowButton"
+    );
+
+
+  if (button) {
+
+    button.addEventListener(
+      "click",
+      () => {
+
+        window.location.href =
+          CHARIOW_CHECKOUT_URL;
+
+      }
     );
 
   }
@@ -285,38 +409,200 @@ async function loadProfile() {
 
 /*
 ========================================
-HISTORIQUE DÉPÔTS
+ENVOYER DEMANDE DE DÉPÔT
+========================================
+*/
+
+async function submitDeposit(
+  event
+) {
+
+  event.preventDefault();
+
+
+  const amount =
+    Number(
+      amountInput
+        ? amountInput.value
+        : 0
+    );
+
+
+  const method =
+    paymentMethod
+      ? paymentMethod.value
+      : "";
+
+
+  const reference =
+    referenceInput
+      ? referenceInput.value.trim()
+      : "";
+
+
+  /*
+  ==============================
+  VALIDATION MONTANT
+  ==============================
+  */
+
+  if (
+    !Number.isFinite(amount) ||
+    amount < MIN_AMOUNT
+  ) {
+
+    alert(
+      `Le montant minimum est de ${formatMoney(MIN_AMOUNT)} CDF.`
+    );
+
+    return;
+
+  }
+
+
+  /*
+  ==============================
+  VALIDATION MOYEN
+  ==============================
+  */
+
+  if (!method) {
+
+    alert(
+      "Veuillez choisir un moyen de paiement."
+    );
+
+    return;
+
+  }
+
+
+  /*
+  ==============================
+  VALIDATION RÉFÉRENCE
+  ==============================
+  */
+
+  if (!reference) {
+
+    alert(
+      "Veuillez entrer la référence du paiement."
+    );
+
+    return;
+
+  }
+
+
+  /*
+  ==============================
+  BOUTON
+  ==============================
+  */
+
+  if (submitButton) {
+
+    submitButton.disabled = true;
+
+    submitButton.textContent =
+      "Envoi en cours...";
+
+  }
+
+
+  try {
+
+    const data =
+      await api(
+        "/api/deposits",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+
+            amount:
+              amount,
+
+            payment_method:
+              method,
+
+            reference:
+              reference
+
+          })
+
+        }
+      );
+
+
+    alert(
+      data.message ||
+      "Votre demande de dépôt a été envoyée."
+    );
+
+
+    if (referenceInput) {
+
+      referenceInput.value =
+        "";
+
+    }
+
+
+    await loadBalance();
+
+    await loadDeposits();
+
+
+  } catch (error) {
+
+    console.error(
+      "Erreur dépôt:",
+      error
+    );
+
+
+    alert(
+      error.message ||
+      "Impossible d'envoyer la demande."
+    );
+
+
+  } finally {
+
+    if (submitButton) {
+
+      submitButton.disabled =
+        false;
+
+      submitButton.textContent =
+        "Envoyer la demande";
+
+    }
+
+  }
+
+}
+
+
+/*
+========================================
+HISTORIQUE DES DÉPÔTS
 ========================================
 */
 
 async function loadDeposits() {
 
+  if (!depositsList)
+    return;
+
+
   try {
 
-    const response =
-      await fetch(
-        "/api/deposits/my",
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`
-          }
-        }
-      );
-
-
     const data =
-      await response.json();
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.message ||
-        "Impossible de charger l'historique."
+      await api(
+        "/api/deposits/my"
       );
-
-    }
 
 
     const deposits =
@@ -325,7 +611,7 @@ async function loadDeposits() {
 
     if (!deposits.length) {
 
-      depositHistory.innerHTML = `
+      depositsList.innerHTML = `
 
         <div class="empty-state">
 
@@ -344,84 +630,68 @@ async function loadDeposits() {
     }
 
 
-    depositHistory.innerHTML =
-      deposits.map(
-        deposit => {
-
-          const status =
-            String(
-              deposit.status || ""
-            ).toLowerCase();
+    depositsList.innerHTML =
+      "";
 
 
-          let statusClass =
-            "status-pending";
+    deposits.forEach(
+      deposit => {
+
+        const item =
+          document.createElement(
+            "div"
+          );
 
 
-          if (
-            status === "completed" ||
-            status === "approved"
-          ) {
-
-            statusClass =
-              "status-completed";
-
-          }
+        item.className =
+          "deposit-item";
 
 
-          if (
-            status === "failed" ||
-            status === "rejected" ||
-            status === "cancelled"
-          ) {
+        item.innerHTML = `
 
-            statusClass =
-              "status-failed";
+          <div>
 
-          }
+            <strong>
+              ${formatMoney(
+                deposit.amount
+              )} CDF
+            </strong>
+
+            <small>
+              ${deposit.created_at || ""}
+            </small>
+
+          </div>
+
+          <span
+            class="deposit-status"
+          >
+            ${escapeHtml(
+              deposit.status ||
+              "pending"
+            )}
+          </span>
+
+        `;
 
 
-          return `
+        depositsList.appendChild(
+          item
+        );
 
-            <div class="deposit-item">
-
-              <div>
-
-                <div class="deposit-amount">
-                  ${formatMoney(
-                    deposit.amount
-                  )} CDF
-                </div>
-
-                <div class="deposit-date">
-                  ${deposit.created_at || ""}
-                </div>
-
-              </div>
-
-              <strong
-                class="${statusClass}"
-              >
-                ${status || "pending"}
-              </strong>
-
-            </div>
-
-          `;
-
-        }
-      ).join("");
+      }
+    );
 
 
   } catch (error) {
 
     console.error(
-      "Dépôts:",
+      "Erreur historique dépôts:",
       error
     );
 
 
-    depositHistory.innerHTML = `
+    depositsList.innerHTML = `
 
       <div class="empty-state">
 
@@ -442,24 +712,62 @@ async function loadDeposits() {
 
 /*
 ========================================
-DÉCONNEXION
+SÉCURITÉ HTML
 ========================================
 */
 
-if (logoutButton) {
+function escapeHtml(
+  value
+) {
 
-  logoutButton.addEventListener(
-    "click",
-    () => {
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
-      localStorage.removeItem(
-        "nosmyboost_token"
-      );
+}
 
-      window.location.href =
-        "/login.html";
 
-    }
+/*
+========================================
+ÉVÉNEMENTS
+========================================
+*/
+
+if (paymentMethod) {
+
+  paymentMethod.addEventListener(
+    "change",
+    showPaymentInstructions
+  );
+
+}
+
+
+if (depositForm) {
+
+  depositForm.addEventListener(
+    "submit",
+    submitDeposit
   );
 
 }
@@ -471,8 +779,17 @@ DÉMARRAGE
 ========================================
 */
 
-updatePayment();
+document.addEventListener(
+  "DOMContentLoaded",
+  async () => {
 
-loadProfile();
+    createChariowButton();
 
-loadDeposits();
+    showPaymentInstructions();
+
+    await loadBalance();
+
+    await loadDeposits();
+
+  }
+);
