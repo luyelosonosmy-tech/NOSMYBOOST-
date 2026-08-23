@@ -18,6 +18,9 @@ const orderRoutes =
 const depositRoutes =
   require("./routes/deposits");
 
+const chariowWebhookRoutes =
+  require("./routes/chariow");
+
 const adminRoutes =
   require("./routes/admin");
 
@@ -102,6 +105,11 @@ app.use(
 app.use(
   "/api/deposits",
   depositRoutes
+);
+
+app.use(
+  "/api/webhooks/chariow",
+  chariowWebhookRoutes
 );
 
 app.use(
