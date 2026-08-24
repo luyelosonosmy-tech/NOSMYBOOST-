@@ -6,23 +6,12 @@ require("dotenv").config();
 
 const db = require("./database/database");
 
-const authRoutes =
-  require("./routes/auth");
-
-const serviceRoutes =
-  require("./routes/services");
-
-const orderRoutes =
-  require("./routes/orders");
-
-const depositRoutes =
-  require("./routes/deposits");
-
-const chariowWebhookRoutes =
-  require("./routes/chariow");
-
-const adminRoutes =
-  require("./routes/admin");
+const authRoutes = require("./routes/auth");
+const serviceRoutes = require("./routes/services");
+const orderRoutes = require("./routes/orders");
+const depositRoutes = require("./routes/deposits");
+const chariowWebhookRoutes = require("./routes/chariow");
+const adminRoutes = require("./routes/admin");
 
 const {
   startOrderStatusSync
@@ -35,7 +24,7 @@ const {
 
 /*
 ========================================
-NOSMYBOOST🇧🇪
+NOSMYBOOST 🇧🇪
 SERVEUR PRINCIPAL
 ========================================
 */
@@ -48,31 +37,21 @@ const PORT =
 
 /*
 ========================================
-MIDDLEWARES
+RAW BODY POUR WEBHOOK CHARIOW
 ========================================
-*/
 
-/*
-IMPORTANT:
-Chariow webhook esengeli kozala na raw body
-mpo signature vérification esala correctement.
+On garde le corps original de la requête
+afin de pouvoir vérifier correctement
+la signature HMAC envoyée par Chariow.
+========================================
 */
 
 app.use(
   express.json({
     limit: "2mb",
+
     verify: (req, res, buf) => {
-
-      if (
-        req.originalUrl ===
-        "/api/webhooks/chariow"
-      ) {
-
-        req.rawBody =
-          Buffer.from(buf);
-
-      }
-
+      req.rawBody = Buffer.from(buf);
     }
   })
 );
@@ -126,18 +105,10 @@ app.use(
   depositRoutes
 );
 
-
-/*
-========================================
-WEBHOOK CHARIOW
-========================================
-*/
-
 app.use(
   "/api/webhooks/chariow",
   chariowWebhookRoutes
 );
-
 
 app.use(
   "/api/admin",
@@ -156,15 +127,11 @@ app.get(
   (req, res) => {
 
     res.json({
-
       success: true,
-
-      site:
-        "NOSMYBOOST🇧🇪",
-
-      status:
-        "online"
-
+      site: "NOSMYBOOST🇧🇪",
+      status: "online",
+      chariowWebhook:
+        "/api/webhooks/chariow"
     });
 
   }
@@ -195,7 +162,7 @@ app.get(
 
 /*
 ========================================
-ERREUR API
+ERREUR API 404
 ========================================
 */
 
@@ -204,12 +171,9 @@ app.use(
   (req, res) => {
 
     res.status(404).json({
-
       success: false,
-
       message:
         "Route API introuvable."
-
     });
 
   }
@@ -231,12 +195,9 @@ app.use(
     );
 
     res.status(500).json({
-
       success: false,
-
       message:
         "Erreur interne du serveur."
-
     });
 
   }
@@ -271,17 +232,15 @@ console.log(
 );
 
 console.log(
-  "CHARIOW_API_KEY présente :",
-  Boolean(
-    process.env.CHARIOW_API_KEY
-  )
-);
-
-console.log(
   "CHARIOW_WEBHOOK_SECRET présente :",
   Boolean(
     process.env.CHARIOW_WEBHOOK_SECRET
   )
+);
+
+console.log(
+  "CHARIOW WEBHOOK :",
+  "/api/webhooks/chariow"
 );
 
 console.log(
@@ -291,7 +250,7 @@ console.log(
 
 /*
 ========================================
-DÉMARRAGE DU SERVEUR
+DÉMARRAGE
 ========================================
 */
 
@@ -306,7 +265,7 @@ app.listen(
 
     /*
     ========================================
-    SYNCHRONISATION DES SERVICES
+    SYNCHRONISATION SERVICES
     ========================================
     */
 
@@ -330,7 +289,7 @@ app.listen(
 
     /*
     ========================================
-    SYNCHRONISATION DES COMMANDES
+    SYNCHRONISATION COMMANDES
     ========================================
     */
 
