@@ -52,9 +52,28 @@ MIDDLEWARES
 ========================================
 */
 
+/*
+IMPORTANT:
+Chariow webhook esengeli kozala na raw body
+mpo signature vérification esala correctement.
+*/
+
 app.use(
   express.json({
-    limit: "2mb"
+    limit: "2mb",
+    verify: (req, res, buf) => {
+
+      if (
+        req.originalUrl ===
+        "/api/webhooks/chariow"
+      ) {
+
+        req.rawBody =
+          Buffer.from(buf);
+
+      }
+
+    }
   })
 );
 
@@ -107,10 +126,18 @@ app.use(
   depositRoutes
 );
 
+
+/*
+========================================
+WEBHOOK CHARIOW
+========================================
+*/
+
 app.use(
   "/api/webhooks/chariow",
   chariowWebhookRoutes
 );
+
 
 app.use(
   "/api/admin",
@@ -241,6 +268,20 @@ console.log(
   "SMM_API_URL :",
   process.env.SMM_API_URL ||
   "https://smm.africa/api/v3"
+);
+
+console.log(
+  "CHARIOW_API_KEY présente :",
+  Boolean(
+    process.env.CHARIOW_API_KEY
+  )
+);
+
+console.log(
+  "CHARIOW_WEBHOOK_SECRET présente :",
+  Boolean(
+    process.env.CHARIOW_WEBHOOK_SECRET
+  )
 );
 
 console.log(
