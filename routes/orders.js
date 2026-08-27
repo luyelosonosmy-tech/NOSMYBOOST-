@@ -1,3 +1,5 @@
+"use strict";
+
 const express = require("express");
 const db = require("../database/database");
 
@@ -9,11 +11,13 @@ const authenticateToken =
 
 /*
 ========================================
-NOSMYBOOST🇧🇪
+NOSMYBOOST 🇧🇪
 COMMANDES CLIENT + SMM AFRICA
+POSTGRESQL
 VERSION SÉCURISÉE
 ========================================
 */
+
 
 const SMM_API_URL =
   process.env.SMM_API_URL ||
@@ -29,57 +33,38 @@ PROTECTION DOUBLE COMMANDE
 ========================================
 */
 
-const ordersInProgress = new Set();
+const ordersInProgress =
+  new Set();
 
 
 /*
 ========================================
-OUTILS DATABASE
+OUTILS DATABASE POSTGRESQL
 ========================================
 */
 
-function dbGet(sql, params = []) {
+async function dbGet(sql, params = []) {
 
-  return new Promise((resolve, reject) => {
-
-    db.get(
+  const result =
+    await db.query(
       sql,
-      params,
-      (error, row) => {
-
-        if (error) {
-          return reject(error);
-        }
-
-        resolve(row);
-
-      }
+      params
     );
 
-  });
+  return result.rows[0] || null;
 
 }
 
 
-function dbRun(sql, params = []) {
+async function dbAll(sql, params = []) {
 
-  return new Promise((resolve, reject) => {
-
-    db.run(
+  const result =
+    await db.query(
       sql,
-      params,
-      function (error) {
-
-        if (error) {
-          return reject(error);
-        }
-
-        resolve(this);
-
-      }
+      params
     );
 
-  });
+  return result.rows;
 
 }
 
@@ -163,9 +148,13 @@ router.post(
   async (req, res) => {
 
     let localOrderId = null;
+
     let reservedAmount = 0;
+
     let providerAccepted = false;
+
     let userId = null;
+
 
     try {
 
@@ -178,13 +167,16 @@ router.post(
       userId =
         Number(req.user.id);
 
+
       const serviceId =
         Number(req.body.serviceId);
+
 
       const link =
         String(
           req.body.link || ""
         ).trim();
+
 
       const quantity =
         Number(req.body.quantity);
@@ -219,7 +211,9 @@ router.post(
       ==============================
       */
 
-      if (ordersInProgress.has(userId)) {
+      if (
+        ordersInProgress.has(userId)
+      ) {
 
         return res.status(429).json({
 
@@ -297,7 +291,6 @@ router.post(
         await dbGet(
           `
           SELECT
-
             id,
             name,
             platform,
@@ -307,12 +300,12 @@ router.post(
             provider,
             provider_service_id,
             active
-
           FROM services
-
-          WHERE id = ?
+          WHERE id = $1
           `,
-          [serviceId]
+          [
+            serviceId
+          ]
         );
 
 
@@ -349,10 +342,8 @@ router.post(
       */
 
       if (
-        service.provider_service_id ===
-          null ||
-        service.provider_service_id ===
-          undefined ||
+        service.provider_service_id === null ||
+        service.provider_service_id === undefined ||
         String(
           service.provider_service_id
         ).trim() === ""
@@ -396,6 +387,7 @@ router.post(
           service.min_quantity || 1
         );
 
+
       const max =
         Number(
           service.max_quantity ||
@@ -403,7 +395,9 @@ router.post(
         );
 
 
-      if (quantity < min) {
+      if (
+        quantity < min
+      ) {
 
         throw new Error(
           `La quantité minimum est de ${min}.`
@@ -412,7 +406,9 @@ router.post(
       }
 
 
-      if (quantity > max) {
+      if (
+        quantity > max
+      ) {
 
         throw new Error(
           `La quantité maximum est de ${max}.`
@@ -485,16 +481,15 @@ router.post(
         await dbGet(
           `
           SELECT
-
             id,
             balance,
             total_spent
-
           FROM users
-
-          WHERE id = ?
+          WHERE id = $1
           `,
-          [userId]
+          [
+            userId
+          ]
         );
 
 
@@ -520,8 +515,7 @@ router.post(
       */
 
       if (
-        balance <
-        totalPrice
+        balance < totalPrice
       ) {
 
         return res.status(400).json({
@@ -544,7 +538,8 @@ router.post(
       /*
       ==================================================
       ÉTAPE 1
-      RÉSERVER L'ARGENT ET CRÉER UNE COMMANDE PENDING
+      RÉSERVER L'ARGENT
+      ET CRÉER UNE COMMANDE PENDING
       ==================================================
       */
 
@@ -553,12 +548,22 @@ router.post(
       );
 
 
-      await dbRun(
-        "BEGIN TRANSACTION"
-      );
+      /*
+      IMPORTANT :
+      PostgreSQL exige que BEGIN / UPDATE / INSERT /
+      COMMIT utilisent le même client.
+      */
+
+      const client =
+        await db.connect();
 
 
       try {
+
+        await client.query(
+          "BEGIN"
+        );
+
 
         /*
         ------------------------------
@@ -567,21 +572,18 @@ router.post(
         */
 
         const debit =
-          await dbRun(
+          await client.query(
             `
             UPDATE users
-
             SET
-
               balance =
-                balance - ?,
+                balance - $1,
 
               total_spent =
-                total_spent + ?
+                total_spent + $2
 
-            WHERE id = ?
-
-              AND balance >= ?
+            WHERE id = $3
+              AND balance >= $4
             `,
             [
               totalPrice,
@@ -593,7 +595,7 @@ router.post(
 
 
         if (
-          debit.changes !== 1
+          debit.rowCount !== 1
         ) {
 
           throw new Error(
@@ -610,7 +612,7 @@ router.post(
         */
 
         const inserted =
-          await dbRun(
+          await client.query(
             `
             INSERT INTO orders
             (
@@ -622,17 +624,17 @@ router.post(
               status,
               provider_order_id
             )
-
             VALUES
             (
-              ?,
-              ?,
-              ?,
-              ?,
-              ?,
-              ?,
-              ?
+              $1,
+              $2,
+              $3,
+              $4,
+              $5,
+              $6,
+              $7
             )
+            RETURNING id
             `,
             [
               userId,
@@ -647,27 +649,33 @@ router.post(
 
 
         localOrderId =
-          inserted.lastID;
+          inserted.rows[0].id;
 
 
         /*
         ------------------------------
-        VALIDATION LOCALE
+        COMMIT
         ------------------------------
         */
 
-        await dbRun(
+        await client.query(
           "COMMIT"
         );
 
 
       } catch (transactionError) {
 
-        await dbRun(
+        await client.query(
           "ROLLBACK"
         ).catch(() => {});
 
+
         throw transactionError;
+
+
+      } finally {
+
+        client.release();
 
       }
 
@@ -740,12 +748,16 @@ router.post(
         );
 
 
-        await dbRun(
-          "BEGIN TRANSACTION"
-        );
+        const refundClient =
+          await db.connect();
 
 
         try {
+
+          await refundClient.query(
+            "BEGIN"
+          );
+
 
           /*
           ------------------------------
@@ -753,26 +765,21 @@ router.post(
           ------------------------------
           */
 
-          await dbRun(
+          await refundClient.query(
             `
             UPDATE users
-
             SET
-
               balance =
-                balance + ?,
+                balance + $1,
 
               total_spent =
                 CASE
-
-                  WHEN total_spent >= ?
-                  THEN total_spent - ?
-
+                  WHEN total_spent >= $2
+                  THEN total_spent - $3
                   ELSE 0
-
                 END
 
-            WHERE id = ?
+            WHERE id = $4
             `,
             [
               totalPrice,
@@ -789,13 +796,13 @@ router.post(
           ------------------------------
           */
 
-          await dbRun(
+          await refundClient.query(
             `
             UPDATE orders
+            SET
+              status = $1
 
-            SET status = ?
-
-            WHERE id = ?
+            WHERE id = $2
             `,
             [
               "failed",
@@ -804,14 +811,14 @@ router.post(
           );
 
 
-          await dbRun(
+          await refundClient.query(
             "COMMIT"
           );
 
 
         } catch (refundError) {
 
-          await dbRun(
+          await refundClient.query(
             "ROLLBACK"
           ).catch(() => {});
 
@@ -821,9 +828,15 @@ router.post(
             refundError
           );
 
+
           throw new Error(
             "La commande fournisseur a échoué et le remboursement automatique nécessite une vérification administrateur."
           );
+
+
+        } finally {
+
+          refundClient.release();
 
         }
 
@@ -862,20 +875,12 @@ router.post(
 
 
       if (
-        providerOrderId ===
-          undefined ||
-        providerOrderId ===
-          null ||
+        providerOrderId === undefined ||
+        providerOrderId === null ||
         String(
           providerOrderId
         ).trim() === ""
       ) {
-
-        /*
-        SMM AFRICA A RÉPONDU MAIS
-        SANS ID → ON NE CONSIDÈRE PAS
-        LA COMMANDE COMME ACCEPTÉE.
-        */
 
         console.error(
           "Réponse SMM Africa invalide:",
@@ -889,33 +894,32 @@ router.post(
         ------------------------------
         */
 
-        await dbRun(
-          "BEGIN TRANSACTION"
-        );
+        const refundClient =
+          await db.connect();
 
 
         try {
 
-          await dbRun(
+          await refundClient.query(
+            "BEGIN"
+          );
+
+
+          await refundClient.query(
             `
             UPDATE users
-
             SET
-
               balance =
-                balance + ?,
+                balance + $1,
 
               total_spent =
                 CASE
-
-                  WHEN total_spent >= ?
-                  THEN total_spent - ?
-
+                  WHEN total_spent >= $2
+                  THEN total_spent - $3
                   ELSE 0
-
                 END
 
-            WHERE id = ?
+            WHERE id = $4
             `,
             [
               totalPrice,
@@ -926,13 +930,13 @@ router.post(
           );
 
 
-          await dbRun(
+          await refundClient.query(
             `
             UPDATE orders
+            SET
+              status = $1
 
-            SET status = ?
-
-            WHERE id = ?
+            WHERE id = $2
             `,
             [
               "failed",
@@ -941,14 +945,14 @@ router.post(
           );
 
 
-          await dbRun(
+          await refundClient.query(
             "COMMIT"
           );
 
 
         } catch (refundError) {
 
-          await dbRun(
+          await refundClient.query(
             "ROLLBACK"
           ).catch(() => {});
 
@@ -962,6 +966,11 @@ router.post(
           throw new Error(
             "Réponse fournisseur invalide et remboursement à vérifier par l'administrateur."
           );
+
+
+        } finally {
+
+          refundClient.release();
 
         }
 
@@ -1001,19 +1010,16 @@ router.post(
       */
 
       const updateProvider =
-        await dbRun(
+        await db.query(
           `
           UPDATE orders
-
           SET
+            provider_order_id = $1,
 
-            provider_order_id = ?,
+            status = $2
 
-            status = ?
-
-          WHERE id = ?
-
-            AND user_id = ?
+          WHERE id = $3
+            AND user_id = $4
           `,
           [
             String(
@@ -1030,16 +1036,8 @@ router.post(
 
 
       if (
-        updateProvider.changes !== 1
+        updateProvider.rowCount !== 1
       ) {
-
-        /*
-        IMPORTANT :
-        L'argent reste réservé/débité et
-        la commande existe déjà en pending.
-        On NE rembourse PAS automatiquement
-        ici parce que le fournisseur a accepté.
-        */
 
         console.error(
           "⚠️ FOURNISSEUR ACCEPTÉ MAIS MISE À JOUR LOCALE ÉCHOUÉE"
@@ -1167,11 +1165,9 @@ router.post(
 
       /*
       ==================================================
-      CAS EXCEPTIONNEL
+      SI FOURNISSEUR DÉJÀ ACCEPTÉ
+      → NE PAS REMBOURSER
       ==================================================
-
-      Si le fournisseur a déjà accepté,
-      on NE rembourse PAS automatiquement.
       */
 
       if (
@@ -1202,8 +1198,9 @@ router.post(
 
 
       /*
-      Si aucune commande locale n'a été créée,
-      simple erreur.
+      ==================================================
+      AUCUNE COMMANDE LOCALE
+      ==================================================
       */
 
       if (!localOrderId) {
@@ -1222,297 +1219,4 @@ router.post(
 
 
       /*
-      La commande locale existe mais
-      n'a pas été confirmée fournisseur.
-
-      On essaie de la marquer failed.
-      */
-
-      try {
-
-        await dbRun(
-          `
-          UPDATE orders
-
-          SET status = ?
-
-          WHERE id = ?
-
-            AND status = ?
-          `,
-          [
-            "failed",
-            localOrderId,
-            "pending"
-          ]
-        );
-
-      } catch (updateError) {
-
-        console.error(
-          "Impossible de mettre la commande en failed:",
-          updateError
-        );
-
-      }
-
-
-      return res.status(502).json({
-
-        success: false,
-
-        message:
-          error.message ||
-          "Impossible d'envoyer la commande."
-
-      });
-
-    } finally {
-
-      /*
-      ==============================
-      LIBÉRER LE VERROU
-      ==============================
-      */
-
-      if (userId) {
-
-        ordersInProgress.delete(
-          userId
-        );
-
-      }
-
-    }
-
-  }
-);
-
-
-/*
-========================================
-MES COMMANDES
-========================================
-*/
-
-router.get(
-  "/my",
-  authenticateToken,
-  async (req, res) => {
-
-    try {
-
-      const userId =
-        Number(req.user.id);
-
-
-      const orders =
-        await new Promise(
-          (resolve, reject) => {
-
-            db.all(
-              `
-              SELECT
-
-                orders.id,
-
-                orders.link,
-
-                orders.quantity,
-
-                orders.price,
-
-                orders.status,
-
-                orders.provider_order_id,
-
-                orders.created_at,
-
-                services.platform,
-
-                services.name AS service_name
-
-              FROM orders
-
-              JOIN services
-
-                ON services.id =
-                   orders.service_id
-
-              WHERE orders.user_id = ?
-
-              ORDER BY orders.id DESC
-              `,
-              [userId],
-              (error, rows) => {
-
-                if (error) {
-                  return reject(error);
-                }
-
-                resolve(rows);
-
-              }
-            );
-
-          }
-        );
-
-
-      return res.json({
-
-        success: true,
-
-        orders
-
-      });
-
-
-    } catch (error) {
-
-      console.error(
-        "Erreur récupération commandes:",
-        error
-      );
-
-
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          "Impossible de récupérer les commandes."
-
-      });
-
-    }
-
-  }
-);
-
-
-/*
-========================================
-UNE COMMANDE
-========================================
-*/
-
-router.get(
-  "/:id",
-  authenticateToken,
-  async (req, res) => {
-
-    try {
-
-      const userId =
-        Number(req.user.id);
-
-      const orderId =
-        Number(req.params.id);
-
-
-      if (
-        !Number.isInteger(orderId) ||
-        orderId <= 0
-      ) {
-
-        return res.status(400).json({
-
-          success: false,
-
-          message:
-            "ID de commande invalide."
-
-        });
-
-      }
-
-
-      const order =
-        await dbGet(
-          `
-          SELECT
-
-            orders.id,
-
-            orders.link,
-
-            orders.quantity,
-
-            orders.price,
-
-            orders.status,
-
-            orders.provider_order_id,
-
-            orders.created_at,
-
-            services.platform,
-
-            services.name AS service_name
-
-          FROM orders
-
-          JOIN services
-
-            ON services.id =
-               orders.service_id
-
-          WHERE orders.id = ?
-
-            AND orders.user_id = ?
-          `,
-          [
-            orderId,
-            userId
-          ]
-        );
-
-
-      if (!order) {
-
-        return res.status(404).json({
-
-          success: false,
-
-          message:
-            "Commande introuvable."
-
-        });
-
-      }
-
-
-      return res.json({
-
-        success: true,
-
-        order
-
-      });
-
-
-    } catch (error) {
-
-      console.error(
-        "Erreur commande:",
-        error
-      );
-
-
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          "Impossible de récupérer la commande."
-
-      });
-
-    }
-
-  }
-);
-
-
-module.exports = router;
+      ===========================================
