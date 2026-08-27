@@ -15,7 +15,7 @@ const PRODUCT_NAME =
 
 /*
 ========================================
-VÉRIFICATION SIGNATURE CHARIOW
+VÉRIFIER SIGNATURE CHARIOW
 ========================================
 */
 
@@ -27,7 +27,7 @@ function verifySignature(req) {
   if (!secret) {
 
     console.error(
-      "❌ CHARIOW_WEBHOOK_SECRET manque dans Render."
+      "❌ CHARIOW_WEBHOOK_SECRET manque."
     );
 
     return false;
@@ -50,26 +50,17 @@ function verifySignature(req) {
 
 
   /*
-  IMPORTANT :
-  utiliser le corps ORIGINAL
-  et non JSON.stringify(req.body)
+  On utilise le RAW BODY original.
   */
 
   const rawBody =
-    req.rawBody;
-
-
-  if (!rawBody) {
-
-    console.error(
-      "❌ Raw body Chariow absent."
+    req.rawBody ||
+    Buffer.from(
+      JSON.stringify(req.body || {})
     );
 
-    return false;
-  }
 
-
-  const expectedHex =
+  const expected =
     crypto
       .createHmac(
         "sha256",
@@ -79,44 +70,43 @@ function verifySignature(req) {
       .digest("hex");
 
 
-  const expectedBase64 =
-    crypto
-      .createHmac(
-        "sha256",
-        secret
+  try {
+
+    const received =
+      String(signature)
+        .replace(/^sha256=/, "")
+        .trim();
+
+
+    if (
+      received.length !==
+      expected.length
+    ) {
+
+      return false;
+
+    }
+
+
+    return crypto.timingSafeEqual(
+
+      Buffer.from(
+        received,
+        "utf8"
+      ),
+
+      Buffer.from(
+        expected,
+        "utf8"
       )
-      .update(rawBody)
-      .digest("base64");
 
+    );
 
-  const received =
-    String(signature)
-      .trim()
-      .replace(/^sha256=/i, "");
+  } catch {
 
-
-  /*
-  Accepte :
-  - hex
-  - sha256=hex
-  - base64
-  */
-
-  if (
-    received === expectedHex ||
-    received === expectedBase64
-  ) {
-
-    return true;
+    return false;
 
   }
-
-
-  console.error(
-    "❌ Signature Chariow invalide."
-  );
-
-  return false;
 
 }
 
@@ -129,39 +119,33 @@ WEBHOOK CHARIOW
 
 router.post(
   "/",
-  async (req, res) => {
-
-    console.log(
-      "========================================"
-    );
+  (req, res) => {
 
     console.log(
       "📩 WEBHOOK CHARIOW REÇU"
     );
 
-    console.log(
-      new Date().toISOString()
-    );
-
-    console.log(
-      "========================================"
-    );
-
 
     /*
-    --------------------------------
-    VÉRIFICATION SIGNATURE
-    --------------------------------
+    ====================================
+    SÉCURITÉ
+    ====================================
     */
 
-    if (!verifySignature(req)) {
+    if (
+      !verifySignature(req)
+    ) {
+
+      console.error(
+        "❌ Signature Chariow invalide."
+      );
 
       return res.status(401).json({
 
         success: false,
 
         message:
-          "Signature Chariow invalide."
+          "Signature invalide."
 
       });
 
@@ -169,9 +153,9 @@ router.post(
 
 
     /*
-    --------------------------------
+    ====================================
     PAYLOAD
-    --------------------------------
+    ====================================
     */
 
     const payload =
@@ -179,7 +163,7 @@ router.post(
 
 
     console.log(
-      "📦 Chariow payload:"
+      "📦 PAYLOAD CHARIOW:"
     );
 
     console.log(
@@ -192,9 +176,9 @@ router.post(
 
 
     /*
-    --------------------------------
-    EXTRACTION EMAIL
-    --------------------------------
+    ====================================
+    CLIENT
+    ====================================
     */
 
     const email =
@@ -206,9 +190,9 @@ router.post(
 
 
     /*
-    --------------------------------
-    EXTRACTION MONTANT
-    --------------------------------
+    ====================================
+    MONTANT
+    ====================================
     */
 
     const amount =
@@ -222,22 +206,22 @@ router.post(
 
 
     /*
-    --------------------------------
-    EXTRACTION PRODUIT
-    --------------------------------
+    ====================================
+    PRODUIT
+    ====================================
     */
 
     const product =
       payload.product?.name ||
       payload.product_name ||
       payload.name ||
-      "";
+      PRODUCT_NAME;
 
 
     /*
-    --------------------------------
-    EXTRACTION ID
-    --------------------------------
+    ====================================
+    ID VENTE
+    ====================================
     */
 
     const paymentId =
@@ -261,7 +245,7 @@ router.post(
     );
 
     console.log(
-      "🛍️ Produit:",
+      "🛒 Produit:",
       product
     );
 
@@ -272,45 +256,14 @@ router.post(
 
 
     /*
-    --------------------------------
-    TEST PULSE / PAYLOAD INCOMPLET
-    --------------------------------
-
-    On ne crédite JAMAIS sans email.
-    Mais on répond 200 afin de confirmer
-    que le webhook est bien accessible.
-    */
-
-    if (!email) {
-
-      console.log(
-        "ℹ️ Aucun email dans ce Pulse."
-      );
-
-      return res.status(200).json({
-
-        success: true,
-
-        received: true,
-
-        credited: false,
-
-        message:
-          "Pulse reçu, aucun client crédité."
-
-      });
-
-    }
-
-
-    /*
-    --------------------------------
-    VÉRIFICATION PRODUIT
-    --------------------------------
+    ====================================
+    PRODUIT
+    ====================================
     */
 
     if (
       product &&
+      product !== PRODUCT_NAME &&
       !product
         .toLowerCase()
         .includes(
@@ -323,14 +276,11 @@ router.post(
         product
       );
 
-      return res.status(200).json({
+      return res.json({
 
         success: true,
 
-        ignored: true,
-
-        reason:
-          "Produit différent."
+        ignored: true
 
       });
 
@@ -338,13 +288,13 @@ router.post(
 
 
     /*
-    --------------------------------
-    VÉRIFICATION MONTANT
-    --------------------------------
+    ====================================
+    MONTANT
+    ====================================
     */
 
     if (
-      amount > 0 &&
+      amount &&
       amount !== RECHARGE_AMOUNT
     ) {
 
@@ -353,14 +303,11 @@ router.post(
         amount
       );
 
-      return res.status(200).json({
+      return res.json({
 
         success: true,
 
-        ignored: true,
-
-        reason:
-          "Montant différent."
+        ignored: true
 
       });
 
@@ -368,32 +315,37 @@ router.post(
 
 
     /*
-    --------------------------------
-    REFERENCE PAIEMENT
-    --------------------------------
+    ====================================
+    EMAIL OBLIGATOIRE
+    ====================================
     */
 
-    const referenceId =
-      paymentId ||
-      crypto
-        .createHash("sha256")
-        .update(
-          JSON.stringify(payload)
-        )
-        .digest("hex");
+    if (!email) {
 
+      console.error(
+        "❌ Email client absent."
+      );
 
-    const reference =
-      `CHARIOW:${referenceId}`;
+      return res.status(400).json({
+
+        success: false,
+
+        message:
+          "Email client absent."
+
+      });
+
+    }
 
 
     /*
-    --------------------------------
-    RECHERCHER CLIENT
-    --------------------------------
+    ====================================
+    RECHERCHE CLIENT
+    ====================================
     */
 
     db.get(
+
       `
       SELECT
         id,
@@ -402,9 +354,10 @@ router.post(
         total_deposited
       FROM users
       WHERE LOWER(email) = LOWER(?)
-      LIMIT 1
       `,
+
       [email],
+
       (error, user) => {
 
         if (error) {
@@ -426,12 +379,6 @@ router.post(
         }
 
 
-        /*
-        --------------------------------
-        CLIENT INTROUVABLE
-        --------------------------------
-        */
-
         if (!user) {
 
           console.error(
@@ -439,11 +386,9 @@ router.post(
             email
           );
 
-          return res.status(200).json({
+          return res.status(404).json({
 
-            success: true,
-
-            credited: false,
+            success: false,
 
             message:
               "Compte NOSMYBOOST introuvable."
@@ -454,26 +399,48 @@ router.post(
 
 
         /*
-        --------------------------------
+        ==================================
+        ID PAIEMENT
+        ==================================
+        */
+
+        const finalPaymentId =
+          paymentId ||
+          crypto
+            .createHash("sha256")
+            .update(
+              JSON.stringify(payload)
+            )
+            .digest("hex");
+
+
+        const reference =
+          `CHARIOW:${finalPaymentId}`;
+
+
+        /*
+        ==================================
         PROTECTION DOUBLE CRÉDIT
-        --------------------------------
+        ==================================
         */
 
         db.get(
+
           `
-          SELECT
-            id
+          SELECT id
           FROM deposits
           WHERE proof = ?
           LIMIT 1
           `,
+
           [reference],
+
           (checkError, existing) => {
 
             if (checkError) {
 
               console.error(
-                "❌ Vérification dépôt:",
+                "❌ Vérification paiement:",
                 checkError
               );
 
@@ -493,16 +460,14 @@ router.post(
 
               console.log(
                 "⚠️ Paiement déjà traité:",
-                reference
+                finalPaymentId
               );
 
-              return res.status(200).json({
+              return res.json({
 
                 success: true,
 
-                alreadyProcessed: true,
-
-                credited: false
+                alreadyProcessed: true
 
               });
 
@@ -510,17 +475,173 @@ router.post(
 
 
             /*
-            --------------------------------
+            ================================
             CRÉDIT
-            --------------------------------
+            ================================
             */
 
-            creditUser(
-              user,
-              email,
-              reference,
-              res
-            );
+            db.serialize(() => {
+
+              db.run(
+                "BEGIN TRANSACTION"
+              );
+
+
+              db.run(
+
+                `
+                INSERT INTO deposits
+                (
+                  user_id,
+                  amount,
+                  method,
+                  proof,
+                  status
+                )
+                VALUES
+                (?, ?, ?, ?, 'completed')
+                `,
+
+                [
+                  user.id,
+
+                  RECHARGE_AMOUNT,
+
+                  "chariow",
+
+                  reference
+                ],
+
+                function(insertError) {
+
+                  if (insertError) {
+
+                    console.error(
+                      "❌ Création dépôt:",
+                      insertError
+                    );
+
+                    db.run(
+                      "ROLLBACK"
+                    );
+
+                    return res.status(500).json({
+
+                      success: false,
+
+                      message:
+                        "Impossible d'enregistrer le paiement."
+
+                    });
+
+                  }
+
+
+                  db.run(
+
+                    `
+                    UPDATE users
+                    SET
+                      balance =
+                        COALESCE(balance, 0)
+                        + ?,
+
+                      total_deposited =
+                        COALESCE(total_deposited, 0)
+                        + ?
+
+                    WHERE id = ?
+                    `,
+
+                    [
+                      RECHARGE_AMOUNT,
+
+                      RECHARGE_AMOUNT,
+
+                      user.id
+                    ],
+
+                    function(updateError) {
+
+                      if (updateError) {
+
+                        console.error(
+                          "❌ Crédit balance:",
+                          updateError
+                        );
+
+                        db.run(
+                          "ROLLBACK"
+                        );
+
+                        return res.status(500).json({
+
+                          success: false,
+
+                          message:
+                            "Impossible de créditer le compte."
+
+                        });
+
+                      }
+
+
+                      db.run(
+                        "COMMIT",
+                        (commitError) => {
+
+                          if (commitError) {
+
+                            console.error(
+                              "❌ Commit:",
+                              commitError
+                            );
+
+                            db.run(
+                              "ROLLBACK"
+                            );
+
+                            return res.status(500).json({
+
+                              success: false,
+
+                              message:
+                                "Erreur validation paiement."
+
+                            });
+
+                          }
+
+
+                          console.log(
+                            `✅ ${RECHARGE_AMOUNT} CDF crédités à ${email}`
+                          );
+
+
+                          return res.json({
+
+                            success: true,
+
+                            credited: true,
+
+                            amount:
+                              RECHARGE_AMOUNT,
+
+                            userId:
+                              user.id
+
+                          });
+
+                        }
+                      );
+
+                    }
+                  );
+
+                }
+              );
+
+            });
 
           }
         );
@@ -530,244 +651,6 @@ router.post(
 
   }
 );
-
-
-/*
-========================================
-CRÉDITER LE CLIENT
-========================================
-*/
-
-function creditUser(
-  user,
-  email,
-  reference,
-  res
-) {
-
-  db.serialize(() => {
-
-    db.run(
-      "BEGIN TRANSACTION",
-      (beginError) => {
-
-        if (beginError) {
-
-          console.error(
-            "❌ BEGIN:",
-            beginError
-          );
-
-          return res.status(500).json({
-
-            success: false,
-
-            message:
-              "Impossible de démarrer la transaction."
-
-          });
-
-        }
-
-
-        /*
-        --------------------------------
-        CRÉER LE DÉPÔT
-        --------------------------------
-        */
-
-        db.run(
-          `
-          INSERT INTO deposits
-          (
-            user_id,
-            amount,
-            method,
-            proof,
-            status
-          )
-          VALUES
-          (?, ?, ?, ?, 'completed')
-          `,
-          [
-            user.id,
-            RECHARGE_AMOUNT,
-            "chariow",
-            reference
-          ],
-          function(error) {
-
-            if (error) {
-
-              console.error(
-                "❌ Création dépôt:",
-                error
-              );
-
-              return db.run(
-                "ROLLBACK",
-                () => {
-
-                  return res.status(500).json({
-
-                    success: false,
-
-                    message:
-                      "Impossible d'enregistrer le paiement."
-
-                  });
-
-                }
-              );
-
-            }
-
-
-            /*
-            --------------------------------
-            CRÉDITER BALANCE
-            --------------------------------
-            */
-
-            db.run(
-              `
-              UPDATE users
-              SET
-                balance =
-                  COALESCE(balance, 0)
-                  + ?,
-
-                total_deposited =
-                  COALESCE(total_deposited, 0)
-                  + ?
-
-              WHERE id = ?
-              `,
-              [
-                RECHARGE_AMOUNT,
-                RECHARGE_AMOUNT,
-                user.id
-              ],
-              function(updateError) {
-
-                if (updateError) {
-
-                  console.error(
-                    "❌ Crédit balance:",
-                    updateError
-                  );
-
-                  return db.run(
-                    "ROLLBACK",
-                    () => {
-
-                      return res.status(500).json({
-
-                        success: false,
-
-                        message:
-                          "Impossible de créditer le compte."
-
-                      });
-
-                    }
-                  );
-
-                }
-
-
-                /*
-                --------------------------------
-                COMMIT
-                --------------------------------
-                */
-
-                db.run(
-                  "COMMIT",
-                  (commitError) => {
-
-                    if (commitError) {
-
-                      console.error(
-                        "❌ COMMIT:",
-                        commitError
-                      );
-
-                      return db.run(
-                        "ROLLBACK",
-                        () => {
-
-                          return res.status(500).json({
-
-                            success: false,
-
-                            message:
-                              "Erreur validation paiement."
-
-                          });
-
-                        }
-                      );
-
-                    }
-
-
-                    console.log(
-                      "========================================"
-                    );
-
-                    console.log(
-                      `✅ ${RECHARGE_AMOUNT} CDF CRÉDITÉS`
-                    );
-
-                    console.log(
-                      `👤 Client: ${email}`
-                    );
-
-                    console.log(
-                      `🆔 User ID: ${user.id}`
-                    );
-
-                    console.log(
-                      `🧾 Référence: ${reference}`
-                    );
-
-                    console.log(
-                      "========================================"
-                    );
-
-
-                    return res.status(200).json({
-
-                      success: true,
-
-                      credited: true,
-
-                      amount:
-                        RECHARGE_AMOUNT,
-
-                      userId:
-                        user.id,
-
-                      reference
-
-                    });
-
-                  }
-                );
-
-              }
-            );
-
-          }
-        );
-
-      }
-    );
-
-  });
-
-}
 
 
 module.exports = router;
