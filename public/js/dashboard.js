@@ -13,7 +13,19 @@ TOKEN
 ========================================
 */
 
-const token = "";
+/*
+IMPORTANT :
+On récupère le token enregistré
+lors de la connexion.
+*/
+
+const token =
+  localStorage.getItem(
+    "nosmyboost_token"
+  ) ||
+  localStorage.getItem(
+    "token"
+  );
 
 
 /*
@@ -58,10 +70,13 @@ API
 
 async function api(url) {
 
-  const headers = {};
+  const headers = {
+    "Content-Type": "application/json"
+  };
+
 
   /*
-  Si un token existe, on l'envoie.
+  Envoyer le token de connexion.
   */
 
   if (token) {
@@ -83,8 +98,36 @@ async function api(url) {
 
 
   const data =
-    await response.json()
+    await response
+      .json()
       .catch(() => ({}));
+
+
+  /*
+  SESSION EXPIRÉE
+  */
+
+  if (
+    response.status === 401 ||
+    response.status === 403
+  ) {
+
+    localStorage.removeItem(
+      "nosmyboost_token"
+    );
+
+    localStorage.removeItem(
+      "token"
+    );
+
+    window.location.href =
+      "/login.html";
+
+    throw new Error(
+      "Session expirée."
+    );
+
+  }
 
 
   if (!response.ok) {
@@ -114,6 +157,21 @@ async function loadDashboard() {
 
     /*
     ==============================
+    VÉRIFIER TOKEN
+    ==============================
+    */
+
+    if (!token) {
+
+      throw new Error(
+        "Authentification requise."
+      );
+
+    }
+
+
+    /*
+    ==============================
     PROFIL
     ==============================
     */
@@ -127,6 +185,18 @@ async function loadDashboard() {
     const user =
       profile.user || {};
 
+
+    console.log(
+      "👤 Utilisateur connecté:",
+      user
+    );
+
+
+    /*
+    ==============================
+    NOM
+    ==============================
+    */
 
     if (userName) {
 
@@ -149,7 +219,7 @@ async function loadDashboard() {
 
     /*
     ==============================
-    STATISTIQUES
+    SOLDE
     ==============================
     */
 
@@ -169,6 +239,17 @@ async function loadDashboard() {
       Number(
         user.total_spent || 0
       );
+
+
+    console.log(
+      "💰 Solde:",
+      userBalance
+    );
+
+    console.log(
+      "💵 Total déposé:",
+      deposited
+    );
 
 
     if (balance) {
@@ -305,12 +386,6 @@ async function loadRecentOrders() {
     }
 
 
-    /*
-    ==============================
-    5 DERNIÈRES COMMANDES
-    ==============================
-    */
-
     const latest =
       orders.slice(0, 5);
 
@@ -422,19 +497,13 @@ if (logoutButton) {
     "click",
     () => {
 
-      /*
-      Nettoyage éventuel
-      */
-
       localStorage.removeItem(
         "nosmyboost_token"
       );
 
-
       localStorage.removeItem(
         "token"
       );
-
 
       window.location.href =
         "/login.html";
