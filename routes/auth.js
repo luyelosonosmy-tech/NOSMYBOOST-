@@ -1,12 +1,24 @@
+"use strict";
+
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const db = require("../database/database");
+const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
 
 const JWT_SECRET =
   String(process.env.JWT_SECRET || "").trim();
+
+
+/*
+========================================
+NOSMYBOOST 🇧🇪
+AUTHENTIFICATION POSTGRESQL + JWT
+========================================
+*/
 
 
 /*
@@ -63,26 +75,40 @@ router.post(
 
 
       /*
-      ================================
-      VALIDATION
-      ================================
+      ========================================
+      VALIDATION NOM
+      ========================================
       */
 
       if (!name) {
 
         return res.status(400).json({
+
           success: false,
-          message: "Veuillez entrer votre nom."
+
+          message:
+            "Veuillez entrer votre nom."
+
         });
 
       }
 
 
+      /*
+      ========================================
+      VALIDATION EMAIL
+      ========================================
+      */
+
       if (!email) {
 
         return res.status(400).json({
+
           success: false,
-          message: "Veuillez entrer votre adresse Gmail/email."
+
+          message:
+            "Veuillez entrer votre adresse Gmail/email."
+
         });
 
       }
@@ -91,166 +117,210 @@ router.post(
       if (!email.includes("@")) {
 
         return res.status(400).json({
+
           success: false,
-          message: "Adresse email invalide."
-        });
 
-      }
-
-
-      if (password.length < 8) {
-
-        return res.status(400).json({
-          success: false,
           message:
-            "Le mot de passe doit contenir au moins 8 caractères."
-        });
+            "Adresse email invalide."
 
-      }
-
-
-      if (!JWT_SECRET) {
-
-        return res.status(500).json({
-          success: false,
-          message:
-            "JWT_SECRET n'est pas configuré."
         });
 
       }
 
 
       /*
-      ================================
-      VÉRIFIER EMAIL EXISTANT
-      ================================
+      ========================================
+      VALIDATION MOT DE PASSE
+      ========================================
       */
 
-      db.get(
-        `
-        SELECT id
-        FROM users
-        WHERE email = ?
-        `,
-        [email],
-        async (error, existingUser) => {
+      if (password.length < 8) {
 
-          if (error) {
+        return res.status(400).json({
 
-            console.error(error);
+          success: false,
 
-            return res.status(500).json({
-              success: false,
-              message:
-                "Erreur de base de données."
-            });
+          message:
+            "Le mot de passe doit contenir au moins 8 caractères."
 
-          }
+        });
+
+      }
 
 
-          if (existingUser) {
+      /*
+      ========================================
+      VÉRIFIER JWT_SECRET
+      ========================================
+      */
 
-            return res.status(409).json({
-              success: false,
-              message:
-                "Cette adresse email est déjà utilisée."
-            });
+      if (!JWT_SECRET) {
 
-          }
+        return res.status(500).json({
 
+          success: false,
 
-          /*
-          ==============================
-          HASH PASSWORD
-          ==============================
-          */
+          message:
+            "JWT_SECRET n'est pas configuré."
 
-          const hashedPassword =
-            await bcrypt.hash(
-              password,
-              12
-            );
+        });
+
+      }
 
 
-          /*
-          ==============================
-          CRÉER UTILISATEUR
-          ==============================
-          */
+      /*
+      ========================================
+      VÉRIFIER EMAIL EXISTANT
+      ========================================
+      */
 
-          db.run(
-            `
-            INSERT INTO users
-            (
-              name,
-              email,
-              whatsapp,
-              country,
-              password,
-              balance,
-              total_deposited,
-              total_spent
-            )
-
-            VALUES
-            (
-              ?,
-              ?,
-              ?,
-              ?,
-              ?,
-              0,
-              0,
-              0
-            )
-            `,
-            [
-              name,
-              email,
-              whatsapp,
-              country,
-              hashedPassword
-            ],
-            function (insertError) {
-
-              if (insertError) {
-
-                console.error(
-                  insertError
-                );
-
-                return res.status(500).json({
-                  success: false,
-                  message:
-                    "Impossible de créer le compte."
-                });
-
-              }
+      const existingResult =
+        await db.query(
+          `
+          SELECT id
+          FROM users
+          WHERE email = $1
+          LIMIT 1
+          `,
+          [email]
+        );
 
 
-              res.status(201).json({
+      if (existingResult.rows.length > 0) {
 
-                success: true,
+        return res.status(409).json({
 
-                message:
-                  "Compte créé avec succès.",
+          success: false,
 
-                userId:
-                  this.lastID
+          message:
+            "Cette adresse email est déjà utilisée."
 
-              });
+        });
 
-            }
-          );
+      }
 
-        }
-      );
+
+      /*
+      ========================================
+      HASH PASSWORD
+      ========================================
+      */
+
+      const hashedPassword =
+        await bcrypt.hash(
+          password,
+          12
+        );
+
+
+      /*
+      ========================================
+      CRÉER UTILISATEUR
+      ========================================
+      */
+
+      const insertResult =
+        await db.query(
+          `
+          INSERT INTO users
+          (
+            name,
+            email,
+            whatsapp,
+            country,
+            password,
+            balance,
+            total_deposited,
+            total_spent
+          )
+
+          VALUES
+          (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            0,
+            0,
+            0
+          )
+
+          RETURNING
+            id,
+            name,
+            email,
+            whatsapp,
+            country,
+            balance,
+            total_deposited,
+            total_spent,
+            created_at
+          `,
+          [
+            name,
+            email,
+            whatsapp,
+            country,
+            hashedPassword
+          ]
+        );
+
+
+      const user =
+        insertResult.rows[0];
+
+
+      /*
+      ========================================
+      SUCCÈS
+      ========================================
+      */
+
+      return res.status(201).json({
+
+        success: true,
+
+        message:
+          "Compte créé avec succès.",
+
+        userId:
+          user.id
+
+      });
+
 
     } catch (error) {
 
-      console.error(error);
+      console.error(
+        "❌ Erreur inscription PostgreSQL:",
+        error
+      );
 
-      res.status(500).json({
+
+      /*
+      ========================================
+      EMAIL UNIQUE
+      ========================================
+      */
+
+      if (
+        error.code === "23505"
+      ) {
+
+        return res.status(409).json({
+
+          success: false,
+
+          message:
+            "Cette adresse email est déjà utilisée."
+
+        });
+
+      }
+
+
+      return res.status(500).json({
 
         success: false,
 
@@ -273,142 +343,198 @@ CONNEXION
 
 router.post(
   "/login",
-  (req, res) => {
+  async (req, res) => {
 
-    const email =
-      String(req.body.email || "")
-        .trim()
-        .toLowerCase();
+    try {
 
-    const password =
-      String(req.body.password || "");
+      const email =
+        String(req.body.email || "")
+          .trim()
+          .toLowerCase();
+
+      const password =
+        String(req.body.password || "");
 
 
-    if (!email || !password) {
+      /*
+      ========================================
+      VALIDATION
+      ========================================
+      */
 
-      return res.status(400).json({
+      if (!email || !password) {
 
-        success: false,
+        return res.status(400).json({
+
+          success: false,
+
+          message:
+            "Email et mot de passe requis."
+
+        });
+
+      }
+
+
+      /*
+      ========================================
+      JWT SECRET
+      ========================================
+      */
+
+      if (!JWT_SECRET) {
+
+        return res.status(500).json({
+
+          success: false,
+
+          message:
+            "JWT_SECRET n'est pas configuré."
+
+        });
+
+      }
+
+
+      /*
+      ========================================
+      RECHERCHER UTILISATEUR
+      ========================================
+      */
+
+      const result =
+        await db.query(
+          `
+          SELECT
+            id,
+            name,
+            email,
+            whatsapp,
+            country,
+            password,
+            balance,
+            total_deposited,
+            total_spent,
+            created_at
+
+          FROM users
+
+          WHERE email = $1
+
+          LIMIT 1
+          `,
+          [email]
+        );
+
+
+      const user =
+        result.rows[0];
+
+
+      /*
+      ========================================
+      UTILISATEUR INEXISTANT
+      ========================================
+      */
+
+      if (!user) {
+
+        return res.status(401).json({
+
+          success: false,
+
+          message:
+            "Email ou mot de passe incorrect."
+
+        });
+
+      }
+
+
+      /*
+      ========================================
+      VÉRIFIER PASSWORD
+      ========================================
+      */
+
+      const passwordValid =
+        await bcrypt.compare(
+          password,
+          user.password
+        );
+
+
+      if (!passwordValid) {
+
+        return res.status(401).json({
+
+          success: false,
+
+          message:
+            "Email ou mot de passe incorrect."
+
+        });
+
+      }
+
+
+      /*
+      ========================================
+      CRÉER TOKEN JWT
+      ========================================
+      */
+
+      const token =
+        createToken(user);
+
+
+      /*
+      ========================================
+      NE JAMAIS ENVOYER PASSWORD
+      ========================================
+      */
+
+      delete user.password;
+
+
+      /*
+      ========================================
+      SUCCÈS
+      ========================================
+      */
+
+      return res.json({
+
+        success: true,
 
         message:
-          "Email et mot de passe requis."
+          "Connexion réussie.",
+
+        token,
+
+        user
 
       });
 
-    }
 
+    } catch (error) {
 
-    if (!JWT_SECRET) {
+      console.error(
+        "❌ Erreur connexion PostgreSQL:",
+        error
+      );
+
 
       return res.status(500).json({
 
         success: false,
 
         message:
-          "JWT_SECRET n'est pas configuré."
+          "Erreur serveur."
 
       });
 
     }
-
-
-    db.get(
-      `
-      SELECT
-        id,
-        name,
-        email,
-        whatsapp,
-        country,
-        password,
-        balance,
-        total_deposited,
-        total_spent
-      FROM users
-      WHERE email = ?
-      `,
-      [email],
-      async (error, user) => {
-
-        if (error) {
-
-          console.error(error);
-
-          return res.status(500).json({
-
-            success: false,
-
-            message:
-              "Erreur de base de données."
-
-          });
-
-        }
-
-
-        if (!user) {
-
-          return res.status(401).json({
-
-            success: false,
-
-            message:
-              "Email ou mot de passe incorrect."
-
-          });
-
-        }
-
-
-        const passwordValid =
-          await bcrypt.compare(
-            password,
-            user.password
-          );
-
-
-        if (!passwordValid) {
-
-          return res.status(401).json({
-
-            success: false,
-
-            message:
-              "Email ou mot de passe incorrect."
-
-          });
-
-        }
-
-
-        /*
-        ==============================
-        TOKEN
-        ==============================
-        */
-
-        const token =
-          createToken(user);
-
-
-        delete user.password;
-
-
-        res.json({
-
-          success: true,
-
-          message:
-            "Connexion réussie.",
-
-          token,
-
-          user
-
-        });
-
-      }
-    );
 
   }
 );
@@ -420,80 +546,136 @@ MON PROFIL
 ========================================
 */
 
-const authenticateToken =
-  require("../middleware/auth");
-
-
 router.get(
   "/me",
   authenticateToken,
-  (req, res) => {
+  async (req, res) => {
 
-    const userId =
-      Number(req.user.id);
+    try {
 
-
-    db.get(
-      `
-      SELECT
-        id,
-        name,
-        email,
-        whatsapp,
-        country,
-        balance,
-        total_deposited,
-        total_spent,
-        created_at
-      FROM users
-      WHERE id = ?
-      `,
-      [userId],
-      (error, user) => {
-
-        if (error) {
-
-          console.error(error);
-
-          return res.status(500).json({
-
-            success: false,
-
-            message:
-              "Impossible de récupérer votre profil."
-
-          });
-
-        }
+      const userId =
+        Number(req.user.id);
 
 
-        if (!user) {
+      /*
+      ========================================
+      VALIDATION ID
+      ========================================
+      */
 
-          return res.status(404).json({
+      if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+      ) {
 
-            success: false,
+        return res.status(401).json({
 
-            message:
-              "Utilisateur introuvable."
+          success: false,
 
-          });
-
-        }
-
-
-        res.json({
-
-          success: true,
-
-          user
+          message:
+            "Session utilisateur invalide."
 
         });
 
       }
-    );
+
+
+      /*
+      ========================================
+      RÉCUPÉRER UTILISATEUR
+      ========================================
+      */
+
+      const result =
+        await db.query(
+          `
+          SELECT
+            id,
+            name,
+            email,
+            whatsapp,
+            country,
+            balance,
+            total_deposited,
+            total_spent,
+            created_at
+
+          FROM users
+
+          WHERE id = $1
+
+          LIMIT 1
+          `,
+          [userId]
+        );
+
+
+      const user =
+        result.rows[0];
+
+
+      /*
+      ========================================
+      UTILISATEUR INTROUVABLE
+      ========================================
+      */
+
+      if (!user) {
+
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Utilisateur introuvable."
+
+        });
+
+      }
+
+
+      /*
+      ========================================
+      SUCCÈS
+      ========================================
+      */
+
+      return res.json({
+
+        success: true,
+
+        user
+
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "❌ Erreur récupération profil PostgreSQL:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Impossible de récupérer votre profil."
+
+      });
+
+    }
 
   }
 );
 
+
+/*
+========================================
+EXPORT
+========================================
+*/
 
 module.exports = router;
