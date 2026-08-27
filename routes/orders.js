@@ -1196,8 +1196,7 @@ router.post(
 
       }
 
-
-      /*
+            /*
       ==================================================
       AUCUNE COMMANDE LOCALE
       ==================================================
@@ -1219,4 +1218,324 @@ router.post(
 
 
       /*
-      ===========================================
+      ==================================================
+      COMMANDE LOCALE EXISTE
+      MAIS PAS CONFIRMÉE PAR LE FOURNISSEUR
+      ==================================================
+      */
+
+      try {
+
+        await db.query(
+          `
+          UPDATE orders
+
+          SET
+            status = $1
+
+          WHERE id = $2
+
+            AND status = $3
+          `,
+          [
+            "failed",
+            localOrderId,
+            "pending"
+          ]
+        );
+
+      } catch (updateError) {
+
+        console.error(
+          "Impossible de mettre la commande en failed:",
+          updateError
+        );
+
+      }
+
+
+      return res.status(502).json({
+
+        success: false,
+
+        message:
+          error.message ||
+          "Impossible d'envoyer la commande."
+
+      });
+
+    } finally {
+
+      /*
+      ==============================
+      LIBÉRER LE VERROU
+      ==============================
+      */
+
+      if (userId) {
+
+        ordersInProgress.delete(
+          userId
+        );
+
+      }
+
+    }
+
+  }
+);
+
+
+/*
+========================================
+MES COMMANDES
+========================================
+*/
+
+router.get(
+  "/my",
+  authenticateToken,
+  async (req, res) => {
+
+    try {
+
+      const userId =
+        Number(req.user.id);
+
+
+      if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+      ) {
+
+        return res.status(401).json({
+
+          success: false,
+
+          message:
+            "Session utilisateur invalide."
+
+        });
+
+      }
+
+
+      const orders =
+        await dbAll(
+          `
+          SELECT
+
+            orders.id,
+
+            orders.link,
+
+            orders.quantity,
+
+            orders.price,
+
+            orders.status,
+
+            orders.provider_order_id,
+
+            orders.created_at,
+
+            services.platform,
+
+            services.name AS service_name
+
+          FROM orders
+
+          JOIN services
+            ON services.id =
+               orders.service_id
+
+          WHERE orders.user_id = $1
+
+          ORDER BY orders.id DESC
+          `,
+          [
+            userId
+          ]
+        );
+
+
+      return res.json({
+
+        success: true,
+
+        orders:
+          orders || []
+
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "Erreur récupération commandes:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Impossible de récupérer les commandes."
+
+      });
+
+    }
+
+  }
+);
+
+
+/*
+========================================
+UNE COMMANDE
+========================================
+*/
+
+router.get(
+  "/:id",
+  authenticateToken,
+  async (req, res) => {
+
+    try {
+
+      const userId =
+        Number(req.user.id);
+
+      const orderId =
+        Number(req.params.id);
+
+
+      if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+      ) {
+
+        return res.status(401).json({
+
+          success: false,
+
+          message:
+            "Session utilisateur invalide."
+
+        });
+
+      }
+
+
+      if (
+        !Number.isInteger(orderId) ||
+        orderId <= 0
+      ) {
+
+        return res.status(400).json({
+
+          success: false,
+
+          message:
+            "ID de commande invalide."
+
+        });
+
+      }
+
+
+      const order =
+        await dbGet(
+          `
+          SELECT
+
+            orders.id,
+
+            orders.link,
+
+            orders.quantity,
+
+            orders.price,
+
+            orders.status,
+
+            orders.provider_order_id,
+
+            orders.created_at,
+
+            services.platform,
+
+            services.name AS service_name
+
+          FROM orders
+
+          JOIN services
+            ON services.id =
+               orders.service_id
+
+          WHERE orders.id = $1
+
+            AND orders.user_id = $2
+          `,
+          [
+            orderId,
+            userId
+          ]
+        );
+
+
+      if (!order) {
+
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Commande introuvable."
+
+        });
+
+      }
+
+
+      return res.json({
+
+        success: true,
+
+        order
+
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "Erreur commande:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Impossible de récupérer la commande."
+
+      });
+
+    }
+
+  }
+);
+
+
+/*
+========================================
+EXPORT
+========================================
+*/
+
+module.exports = router;
