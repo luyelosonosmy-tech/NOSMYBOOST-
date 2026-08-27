@@ -1,3 +1,5 @@
+"use strict";
+
 const express = require("express");
 const db = require("../database/database");
 const authenticateToken = require("../middleware/auth");
@@ -12,125 +14,225 @@ const PAYMENT_METHODS = [
   "orange"
 ];
 
+
 /*
 ========================================
- CRÉER UNE DEMANDE DE DÉPÔT
+NOSMYBOOST 🇧🇪
+DÉPÔTS
+POSTGRESQL
 ========================================
 */
 
-router.post("/", authenticateToken, (req, res) => {
 
-  const userId = req.user.id;
+/*
+========================================
+CRÉER UNE DEMANDE DE DÉPÔT
+========================================
+*/
 
-  const amount = Number(req.body.amount);
+router.post(
+  "/",
+  authenticateToken,
+  async (req, res) => {
 
-  const method = String(
-    req.body.method || ""
-  )
-    .trim()
-    .toLowerCase();
+    try {
 
-  const proof = String(
-    req.body.proof || ""
-  ).trim();
-
-
-  /*
-  ==============================
-  MONTANT
-  ==============================
-  */
-
-  if (
-    !Number.isFinite(amount) ||
-    amount < MIN_DEPOSIT
-  ) {
-
-    return res.status(400).json({
-      success: false,
-      message:
-        `Le dépôt minimum est de ${MIN_DEPOSIT} CDF.`
-    });
-
-  }
+      const userId =
+        Number(req.user.id);
 
 
-  /*
-  ==============================
-  MOYEN DE PAIEMENT
-  ==============================
-  */
-
-  if (!PAYMENT_METHODS.includes(method)) {
-
-    return res.status(400).json({
-      success: false,
-      message:
-        "Moyen de paiement invalide."
-    });
-
-  }
+      const amount =
+        Number(req.body.amount);
 
 
-  /*
-  ==============================
-  PREUVE / RÉFÉRENCE
-  ==============================
-  */
-
-  if (!proof) {
-
-    return res.status(400).json({
-      success: false,
-      message:
-        "La référence du paiement est obligatoire."
-    });
-
-  }
+      const method =
+        String(
+          req.body.method || ""
+        )
+          .trim()
+          .toLowerCase();
 
 
-  /*
-  ==============================
-  ENREGISTRER LE DÉPÔT
-  ==============================
-  */
+      const proof =
+        String(
+          req.body.proof || ""
+        ).trim();
 
-  db.run(
-    `
-    INSERT INTO deposits
-    (
-      user_id,
-      amount,
-      method,
-      proof,
-      status
-    )
-    VALUES
-    (?, ?, ?, ?, 'pending')
-    `,
-    [
-      userId,
-      amount,
-      method,
-      proof
-    ],
-    function(error) {
 
-      if (error) {
+      /*
+      ==============================
+      VALIDATION UTILISATEUR
+      ==============================
+      */
 
-        console.error(
-          "Erreur dépôt:",
-          error
-        );
+      if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+      ) {
 
-        return res.status(500).json({
+        return res.status(401).json({
+
           success: false,
+
           message:
-            "Impossible d'enregistrer le dépôt."
+            "Session utilisateur invalide."
+
         });
 
       }
 
+
+      /*
+      ==============================
+      MONTANT
+      ==============================
+      */
+
+      if (
+        !Number.isFinite(amount) ||
+        amount < MIN_DEPOSIT
+      ) {
+
+        return res.status(400).json({
+
+          success: false,
+
+          message:
+            `Le dépôt minimum est de ${MIN_DEPOSIT} CDF.`
+
+        });
+
+      }
+
+
+      /*
+      ==============================
+      MOYEN DE PAIEMENT
+      ==============================
+      */
+
+      if (
+        !PAYMENT_METHODS.includes(method)
+      ) {
+
+        return res.status(400).json({
+
+          success: false,
+
+          message:
+            "Moyen de paiement invalide."
+
+        });
+
+      }
+
+
+      /*
+      ==============================
+      PREUVE / RÉFÉRENCE
+      ==============================
+      */
+
+      if (!proof) {
+
+        return res.status(400).json({
+
+          success: false,
+
+          message:
+            "La référence du paiement est obligatoire."
+
+        });
+
+      }
+
+
+      /*
+      ==============================
+      VÉRIFIER UTILISATEUR
+      ==============================
+      */
+
+      const userResult =
+        await db.query(
+          `
+          SELECT id
+          FROM users
+          WHERE id = $1
+          `,
+          [
+            userId
+          ]
+        );
+
+
+      if (
+        userResult.rows.length === 0
+      ) {
+
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Utilisateur introuvable."
+
+        });
+
+      }
+
+
+      /*
+      ==============================
+      ENREGISTRER LE DÉPÔT
+      ==============================
+      */
+
+      const result =
+        await db.query(
+          `
+          INSERT INTO deposits
+          (
+            user_id,
+            amount,
+            method,
+            proof,
+            status
+          )
+          VALUES
+          (
+            $1,
+            $2,
+            $3,
+            $4,
+            'pending'
+          )
+          RETURNING
+            id,
+            amount,
+            method,
+            proof,
+            status,
+            created_at
+          `,
+          [
+            userId,
+            amount,
+            method,
+            proof
+          ]
+        );
+
+
+      const deposit =
+        result.rows[0];
+
+
+      /*
+      ==============================
+      SUCCÈS
+      ==============================
+      */
 
       return res.status(201).json({
 
@@ -140,84 +242,182 @@ router.post("/", authenticateToken, (req, res) => {
           "Demande de dépôt envoyée avec succès.",
 
         depositId:
-          this.lastID,
+          deposit.id,
 
-        amount,
+        amount:
+          Number(deposit.amount),
 
-        method,
+        method:
+          deposit.method,
 
         status:
-          "pending"
+          deposit.status
+
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "Erreur dépôt PostgreSQL:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Impossible d'enregistrer le dépôt."
 
       });
 
     }
-  );
 
-});
+  }
+);
 
 
 /*
 ========================================
- MES DÉPÔTS
+MES DÉPÔTS
 ========================================
 */
 
 router.get(
   "/my",
   authenticateToken,
-  (req, res) => {
+  async (req, res) => {
 
-    const userId =
-      req.user.id;
+    try {
 
-
-    db.all(
-      `
-      SELECT
-        id,
-        amount,
-        method,
-        proof,
-        status,
-        created_at
-      FROM deposits
-      WHERE user_id = ?
-      ORDER BY id DESC
-      `,
-      [userId],
-      (error, deposits) => {
-
-        if (error) {
-
-          console.error(
-            "Erreur récupération dépôts:",
-            error
-          );
-
-          return res.status(500).json({
-            success: false,
-            message:
-              "Impossible de récupérer les dépôts."
-          });
-
-        }
+      const userId =
+        Number(req.user.id);
 
 
-        return res.json({
+      /*
+      ==============================
+      VALIDATION UTILISATEUR
+      ==============================
+      */
 
-          success: true,
+      if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+      ) {
 
-          deposits:
-            deposits || []
+        return res.status(401).json({
+
+          success: false,
+
+          message:
+            "Session utilisateur invalide."
 
         });
 
       }
-    );
+
+
+      /*
+      ==============================
+      RÉCUPÉRER LES DÉPÔTS
+      ==============================
+      */
+
+      const result =
+        await db.query(
+          `
+          SELECT
+            id,
+            amount,
+            method,
+            proof,
+            status,
+            created_at
+          FROM deposits
+          WHERE user_id = $1
+          ORDER BY id DESC
+          `,
+          [
+            userId
+          ]
+        );
+
+
+      /*
+      ==============================
+      FORMATER LES DONNÉES
+      ==============================
+      */
+
+      const deposits =
+        result.rows.map(
+          deposit => ({
+
+            id:
+              deposit.id,
+
+            amount:
+              Number(
+                deposit.amount || 0
+              ),
+
+            method:
+              deposit.method,
+
+            proof:
+              deposit.proof,
+
+            status:
+              deposit.status,
+
+            created_at:
+              deposit.created_at
+
+          })
+        );
+
+
+      /*
+      ==============================
+      RÉPONSE
+      ==============================
+      */
+
+      return res.json({
+
+        success: true,
+
+        deposits
+
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        "Erreur récupération dépôts PostgreSQL:",
+        error
+      );
+
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Impossible de récupérer les dépôts."
+
+      });
+
+    }
 
   }
 );
 
 
-module.exports = router;
+/*
+========================================
+EXPORT
+================================
