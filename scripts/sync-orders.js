@@ -11,6 +11,8 @@ const SMM_API_URL =
 const SMM_API_KEY =
   process.env.SMM_API_KEY;
 
+let syncRunning = false;
+
 
 /*
 ========================================
@@ -22,7 +24,7 @@ async function smmAfricaRequest(payload) {
 
   if (!SMM_API_KEY) {
     throw new Error(
-      "SMM_API_KEY manquante dans .env"
+      "SMM_API_KEY manquante."
     );
   }
 
@@ -61,57 +63,47 @@ async function smmAfricaRequest(payload) {
 
 /*
 ========================================
-RÉCUPÉRER COMMANDES EN COURS
+RÉCUPÉRER LES COMMANDES
+POSTGRESQL
 ========================================
 */
 
-function getProcessingOrders() {
+async function getOrdersToSync() {
 
-  return new Promise(
-    (resolve, reject) => {
+  const result =
+    await db.query(
+      `
+      SELECT
+        id,
+        provider_order_id,
+        status
+      FROM orders
+      WHERE provider_order_id IS NOT NULL
+        AND provider_order_id != ''
+        AND status IN (
+          'pending',
+          'processing'
+        )
+      ORDER BY id ASC
+      `
+    );
 
-      db.all(
-        `
-        SELECT
-          id,
-          provider_order_id,
-          status
-        FROM orders
-        WHERE provider_order_id IS NOT NULL
-          AND status IN (
-            'pending',
-            'processing'
-          )
-        ORDER BY id ASC
-        `,
-        [],
-        (error, rows) => {
-
-          if (error) {
-            return reject(error);
-          }
-
-          resolve(rows || []);
-        }
-      );
-
-    }
-  );
+  return result.rows || [];
 }
 
 
 /*
 ========================================
-CONVERTIR STATUT FOURNISSEUR
+TRADUIRE STATUT
 ========================================
 */
 
-function convertStatus(status) {
+function normalizeStatus(status) {
 
   const value =
     String(status || "")
-      .trim()
-      .toLowerCase();
+      .toLowerCase()
+      .trim();
 
 
   if (
@@ -125,7 +117,8 @@ function convertStatus(status) {
 
   if (
     value === "processing" ||
-    value === "in progress"
+    value === "in progress" ||
+    value === "in_progress"
   ) {
     return "processing";
   }
@@ -163,138 +156,259 @@ function convertStatus(status) {
 
 /*
 ========================================
-METTRE À JOUR LA COMMANDE
+METTRE À JOUR STATUT
+POSTGRESQL
 ========================================
 */
 
-function updateOrder(
+async function updateOrderStatus(
   orderId,
   status
 ) {
 
-  return new Promise(
-    (resolve, reject) => {
+  const result =
+    await db.query(
+      `
+      UPDATE orders
+      SET status = $1
+      WHERE id = $2
+      `,
+      [
+        status,
+        orderId
+      ]
+    );
 
-      db.run(
-        `
-        UPDATE orders
-        SET status = ?
-        WHERE id = ?
-        `,
-        [
-          status,
-          orderId
-        ],
-        error => {
-
-          if (error) {
-            return reject(error);
-          }
-
-          resolve();
-        }
-      );
-
-    }
-  );
+  return result.rowCount;
 }
 
 
 /*
 ========================================
-SYNCHRONISATION
+SYNCHRONISER UNE COMMANDE
+========================================
+*/
+
+async function syncOneOrder(order) {
+
+  try {
+
+    console.log(
+      `🔄 Vérification commande #${order.id} → SMM #${order.provider_order_id}`
+    );
+
+
+    const providerResponse =
+      await smmAfricaRequest({
+
+        action: "status",
+
+        order:
+          String(
+            order.provider_order_id
+          )
+
+      });
+
+
+    const providerStatus =
+      providerResponse?.status;
+
+
+    if (!providerStatus) {
+
+      console.log(
+        `⚠️ Aucun statut reçu pour #${order.id}`
+      );
+
+      return;
+
+    }
+
+
+    const newStatus =
+      normalizeStatus(
+        providerStatus
+      );
+
+
+    if (
+      newStatus === order.status
+    ) {
+
+      console.log(
+        `ℹ️ Commande #${order.id} toujours ${newStatus}`
+      );
+
+      return;
+
+    }
+
+
+    await updateOrderStatus(
+      order.id,
+      newStatus
+    );
+
+
+    console.log(
+      `✅ Commande #${order.id}: ${order.status} → ${newStatus}`
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      `❌ Erreur synchronisation commande #${order.id}:`,
+      error.message
+    );
+
+  }
+
+}
+
+
+/*
+========================================
+SYNCHRONISER TOUTES LES COMMANDES
 ========================================
 */
 
 async function syncOrders() {
 
-  console.log("");
-  console.log(
-    "========================================"
-  );
-  console.log(
-    "NOSMYBOOST - STATUTS SMM AFRICA"
-  );
-  console.log(
-    "========================================"
-  );
+  if (syncRunning) {
 
+    console.log(
+      "⏳ Synchronisation déjà en cours..."
+    );
 
-  const orders =
-    await getProcessingOrders();
-
-
-  console.log(
-    `Commandes à vérifier : ${orders.length}`
-  );
-
-
-  for (const order of orders) {
-
-    try {
-
-      const providerResponse =
-        await smmAfricaRequest({
-
-          action: "status",
-
-          order:
-            String(
-              order.provider_order_id
-            )
-
-        });
-
-
-      const newStatus =
-        convertStatus(
-          providerResponse.status
-        );
-
-
-      await updateOrder(
-        order.id,
-        newStatus
-      );
-
-
-      console.log(
-        `Commande #${order.id} → ${newStatus}`
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        `Commande #${order.id}:`,
-        error.message
-      );
-
-    }
+    return;
 
   }
 
 
-  console.log(
-    "Synchronisation terminée."
-  );
+  syncRunning = true;
+
+
+  try {
+
+    const orders =
+      await getOrdersToSync();
+
+
+    if (
+      orders.length === 0
+    ) {
+
+      console.log(
+        "ℹ️ Aucune commande à synchroniser."
+      );
+
+      return;
+
+    }
+
+
+    console.log(
+      `🔎 ${orders.length} commande(s) à vérifier.`
+    );
+
+
+    for (
+      const order of orders
+    ) {
+
+      await syncOneOrder(
+        order
+      );
+
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ Erreur synchronisation globale:",
+      error.message
+    );
+
+
+  } finally {
+
+    syncRunning = false;
+
+  }
+
 }
 
 
 /*
 ========================================
-LANCEMENT
+DÉMARRER LA SYNCHRONISATION
 ========================================
 */
 
-syncOrders()
-  .catch(error => {
+function startOrderStatusSync() {
 
-    console.error(
-      "❌ Erreur synchronisation:",
-      error.message
-    );
+  console.log(
+    "========================================"
+  );
 
-    process.exit(1);
+  console.log(
+    "NOSMYBOOST 🇧🇪"
+  );
 
-  });
+  console.log(
+    "SYNCHRONISATION COMMANDES ACTIVÉE"
+  );
+
+  console.log(
+    "Vérification toutes les 60 secondes"
+  );
+
+  console.log(
+    "========================================"
+  );
+
+
+  syncOrders()
+    .catch(error => {
+
+      console.error(
+        "Erreur première synchronisation:",
+        error.message
+      );
+
+    });
+
+
+  setInterval(
+    () => {
+
+      syncOrders()
+        .catch(error => {
+
+          console.error(
+            "Erreur synchronisation:",
+            error.message
+          );
+
+        });
+
+    },
+    60 * 1000
+  );
+
+}
+
+
+/*
+========================================
+EXPORT
+========================================
+*/
+
+module.exports = {
+  startOrderStatusSync,
+  syncOrders
+};
