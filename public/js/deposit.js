@@ -5,20 +5,19 @@ require("dotenv").config();
 /*
 ========================================
 NOSMYBOOST 🇧🇪
-DEPOSIT — CHARIOW
+DEPOSIT
+MINIMUM 1000 CDF
 ========================================
 */
 
 const CHARIOW_CHECKOUT_URL =
   "https://iayzxtqb.mychariow.co/prd_szcsq1ct/checkout";
 
-/*
-========================================
-MONTANT MINIMUM
-========================================
-*/
-
 const MIN_AMOUNT = 1000;
+
+const WHATSAPP_NUMBER =
+  "243843066709";
+
 
 /*
 ========================================
@@ -56,6 +55,7 @@ const logoutButton =
 const amountButtons =
   document.querySelectorAll(".amount-btn");
 
+
 /*
 ========================================
 TOKEN
@@ -65,14 +65,6 @@ TOKEN
 const token =
   localStorage.getItem("nosmyboost_token");
 
-/*
-========================================
-WHATSAPP
-========================================
-*/
-
-const WHATSAPP_NUMBER =
-  "243XXXXXXXXX";
 
 /*
 ========================================
@@ -90,6 +82,7 @@ function formatMoney(amount) {
 
 }
 
+
 /*
 ========================================
 API
@@ -100,7 +93,8 @@ async function api(url, options = {}) {
 
   if (!token) {
 
-    window.location.href = "/login.html";
+    window.location.href =
+      "/login.html";
 
     throw new Error("Session expirée.");
 
@@ -125,10 +119,11 @@ async function api(url, options = {}) {
 
     });
 
+
   const data =
-    await response
-      .json()
+    await response.json()
       .catch(() => ({}));
+
 
   if (
     response.status === 401 ||
@@ -142,11 +137,10 @@ async function api(url, options = {}) {
     window.location.href =
       "/login.html";
 
-    throw new Error(
-      "Session expirée."
-    );
+    throw new Error("Session expirée.");
 
   }
+
 
   if (!response.ok) {
 
@@ -157,9 +151,11 @@ async function api(url, options = {}) {
 
   }
 
+
   return data;
 
 }
+
 
 /*
 ========================================
@@ -180,12 +176,14 @@ async function loadUser() {
     const balance =
       Number(user.balance || 0);
 
+
     if (currentBalance) {
 
       currentBalance.textContent =
         `${formatMoney(balance)} CDF`;
 
     }
+
 
     if (userName) {
 
@@ -208,6 +206,7 @@ async function loadUser() {
 
 }
 
+
 /*
 ========================================
 MONTANT SÉLECTIONNÉ
@@ -215,6 +214,7 @@ MONTANT SÉLECTIONNÉ
 */
 
 let selectedValue = MIN_AMOUNT;
+
 
 /*
 ========================================
@@ -227,20 +227,23 @@ function updateSelectedAmount(
   usd
 ) {
 
-  selectedValue =
+  amount =
     Number(amount);
 
   if (
-    !Number.isFinite(selectedValue) ||
-    selectedValue < MIN_AMOUNT
+    !Number.isFinite(amount) ||
+    amount < MIN_AMOUNT
   ) {
 
-    selectedValue =
+    amount =
       MIN_AMOUNT;
 
-    usd = 0.40;
-
   }
+
+
+  selectedValue =
+    amount;
+
 
   if (selectedAmount) {
 
@@ -249,6 +252,7 @@ function updateSelectedAmount(
 
   }
 
+
   if (selectedUsd) {
 
     selectedUsd.textContent =
@@ -256,12 +260,14 @@ function updateSelectedAmount(
 
   }
 
+
   if (payButton) {
 
     payButton.textContent =
       `💳 Payer ${formatMoney(selectedValue)} CDF`;
 
   }
+
 
   amountButtons.forEach(button => {
 
@@ -276,6 +282,7 @@ function updateSelectedAmount(
   });
 
 }
+
 
 /*
 ========================================
@@ -305,38 +312,50 @@ amountButtons.forEach(button => {
 
 });
 
+
 /*
 ========================================
-CHARIOW
+PAIEMENT CHARIOW
 ========================================
 
-ATTENTION :
+IMPORTANT :
 
-Le checkout actuel est celui de 2 500 CDF.
+Le checkout Chariow actuellement utilisé
+doit correspondre au montant configuré
+chez Chariow.
 
-Il n'est donc pas possible de faire croire
-à Chariow qu'un même checkout représente
-automatiquement 1 000, 5 000 ou 10 000 CDF.
+Donc si tu veux réellement accepter :
 
-Pour l'instant :
+1000 CDF
+2500 CDF
+5000 CDF
+10000 CDF
+etc.
 
-- 2 500 CDF → checkout Chariow actuel
-- autres montants → WhatsApp
+il faut créer/configurer les produits
+ou le système de paiement correspondant
+chez Chariow.
 
+On ne transforme PAS un checkout 2500 CDF
+en checkout 1000 CDF uniquement avec
+JavaScript.
 ========================================
 */
 
 function goToChariow() {
 
-  if (selectedValue !== 2500) {
+  if (
+    selectedValue < MIN_AMOUNT
+  ) {
 
     alert(
-      "Le paiement automatique Chariow est actuellement disponible uniquement pour 2 500 CDF. Pour les autres montants, utilisez WhatsApp."
+      "Le dépôt minimum est de 1 000 CDF."
     );
 
     return;
 
   }
+
 
   if (payButton) {
 
@@ -348,14 +367,16 @@ function goToChariow() {
 
   }
 
+
   window.location.href =
     CHARIOW_CHECKOUT_URL;
 
 }
 
+
 /*
 ========================================
-BOUTON PAIEMENT
+PAYER
 ========================================
 */
 
@@ -374,6 +395,7 @@ if (payButton) {
 
 }
 
+
 /*
 ========================================
 WHATSAPP
@@ -390,12 +412,14 @@ function setupWhatsApp() {
   const url =
     `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
 
+
   if (whatsappButton) {
 
     whatsappButton.href =
       url;
 
   }
+
 
   if (manualWhatsapp) {
 
@@ -406,11 +430,13 @@ function setupWhatsApp() {
 
 }
 
+
 setupWhatsApp();
+
 
 /*
 ========================================
-HISTORIQUE DÉPÔTS
+HISTORIQUE
 ========================================
 */
 
@@ -419,6 +445,7 @@ async function loadDeposits() {
   if (!depositHistory)
     return;
 
+
   try {
 
     const data =
@@ -426,6 +453,7 @@ async function loadDeposits() {
 
     const deposits =
       data.deposits || [];
+
 
     if (!deposits.length) {
 
@@ -447,7 +475,9 @@ async function loadDeposits() {
 
     }
 
+
     depositHistory.innerHTML = "";
+
 
     deposits.forEach(deposit => {
 
@@ -457,16 +487,20 @@ async function loadDeposits() {
       item.className =
         "deposit-item";
 
+
       const amount =
         formatMoney(deposit.amount);
+
 
       const status =
         String(
           deposit.status || "pending"
         );
 
+
       let statusClass =
         "status-pending";
+
 
       if (status === "completed") {
 
@@ -475,12 +509,14 @@ async function loadDeposits() {
 
       }
 
+
       if (status === "failed") {
 
         statusClass =
           "status-failed";
 
       }
+
 
       item.innerHTML = `
 
@@ -504,9 +540,11 @@ async function loadDeposits() {
 
       `;
 
+
       depositHistory.appendChild(item);
 
     });
+
 
   } catch (error) {
 
@@ -514,6 +552,7 @@ async function loadDeposits() {
       "Erreur historique dépôts:",
       error
     );
+
 
     depositHistory.innerHTML = `
 
@@ -533,6 +572,7 @@ async function loadDeposits() {
 
 }
 
+
 /*
 ========================================
 SÉCURITÉ HTML
@@ -550,6 +590,7 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 
 }
+
 
 /*
 ========================================
@@ -575,6 +616,7 @@ if (logoutButton) {
 
 }
 
+
 /*
 ========================================
 DÉMARRAGE
@@ -586,7 +628,7 @@ document.addEventListener(
   async () => {
 
     updateSelectedAmount(
-      1000,
+      MIN_AMOUNT,
       0.40
     );
 
