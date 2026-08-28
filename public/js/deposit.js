@@ -1,5 +1,7 @@
 "use strict";
 
+require("dotenv").config();
+
 /*
 ========================================
 NOSMYBOOST 🇧🇪
@@ -10,12 +12,17 @@ DEPOSIT — CHARIOW
 const CHARIOW_CHECKOUT_URL =
   "https://iayzxtqb.mychariow.co/prd_szcsq1ct/checkout";
 
-const MIN_AMOUNT = 2500;
+/*
+========================================
+MONTANT MINIMUM
+========================================
+*/
 
+const MIN_AMOUNT = 1000;
 
 /*
 ========================================
-ÉLÉMENTS DE LA PAGE
+ÉLÉMENTS
 ========================================
 */
 
@@ -49,7 +56,6 @@ const logoutButton =
 const amountButtons =
   document.querySelectorAll(".amount-btn");
 
-
 /*
 ========================================
 TOKEN
@@ -57,10 +63,7 @@ TOKEN
 */
 
 const token =
-  localStorage.getItem(
-    "nosmyboost_token"
-  );
-
+  localStorage.getItem("nosmyboost_token");
 
 /*
 ========================================
@@ -70,7 +73,6 @@ WHATSAPP
 
 const WHATSAPP_NUMBER =
   "243XXXXXXXXX";
-
 
 /*
 ========================================
@@ -88,7 +90,6 @@ function formatMoney(amount) {
 
 }
 
-
 /*
 ========================================
 API
@@ -99,12 +100,9 @@ async function api(url, options = {}) {
 
   if (!token) {
 
-    window.location.href =
-      "/login.html";
+    window.location.href = "/login.html";
 
-    throw new Error(
-      "Session expirée."
-    );
+    throw new Error("Session expirée.");
 
   }
 
@@ -127,12 +125,10 @@ async function api(url, options = {}) {
 
     });
 
-
   const data =
     await response
       .json()
       .catch(() => ({}));
-
 
   if (
     response.status === 401 ||
@@ -152,7 +148,6 @@ async function api(url, options = {}) {
 
   }
 
-
   if (!response.ok) {
 
     throw new Error(
@@ -162,15 +157,13 @@ async function api(url, options = {}) {
 
   }
 
-
   return data;
 
 }
 
-
 /*
 ========================================
-CHARGER UTILISATEUR + SOLDE
+UTILISATEUR + SOLDE
 ========================================
 */
 
@@ -179,20 +172,13 @@ async function loadUser() {
   try {
 
     const data =
-      await api(
-        "/api/auth/me"
-      );
-
+      await api("/api/auth/me");
 
     const user =
       data.user || {};
 
-
     const balance =
-      Number(
-        user.balance || 0
-      );
-
+      Number(user.balance || 0);
 
     if (currentBalance) {
 
@@ -200,7 +186,6 @@ async function loadUser() {
         `${formatMoney(balance)} CDF`;
 
     }
-
 
     if (userName) {
 
@@ -223,19 +208,17 @@ async function loadUser() {
 
 }
 
-
 /*
 ========================================
-MONTANT ACTUEL
+MONTANT SÉLECTIONNÉ
 ========================================
 */
 
-let selectedValue = 2500;
-
+let selectedValue = MIN_AMOUNT;
 
 /*
 ========================================
-METTRE À JOUR LE MONTANT
+MISE À JOUR
 ========================================
 */
 
@@ -245,8 +228,19 @@ function updateSelectedAmount(
 ) {
 
   selectedValue =
-    Number(amount) || 2500;
+    Number(amount);
 
+  if (
+    !Number.isFinite(selectedValue) ||
+    selectedValue < MIN_AMOUNT
+  ) {
+
+    selectedValue =
+      MIN_AMOUNT;
+
+    usd = 0.40;
+
+  }
 
   if (selectedAmount) {
 
@@ -255,14 +249,12 @@ function updateSelectedAmount(
 
   }
 
-
   if (selectedUsd) {
 
     selectedUsd.textContent =
       `$${Number(usd || 0).toFixed(2)} USD`;
 
   }
-
 
   if (payButton) {
 
@@ -271,26 +263,19 @@ function updateSelectedAmount(
 
   }
 
+  amountButtons.forEach(button => {
 
-  amountButtons.forEach(
-    button => {
+    const buttonAmount =
+      Number(button.dataset.amount);
 
-      const buttonAmount =
-        Number(
-          button.dataset.amount
-        );
+    button.classList.toggle(
+      "active",
+      buttonAmount === selectedValue
+    );
 
-
-      button.classList.toggle(
-        "active",
-        buttonAmount === selectedValue
-      );
-
-    }
-  );
+  });
 
 }
-
 
 /*
 ========================================
@@ -298,86 +283,60 @@ BOUTONS MONTANTS
 ========================================
 */
 
-amountButtons.forEach(
-  button => {
+amountButtons.forEach(button => {
 
-    button.addEventListener(
-      "click",
-      () => {
+  button.addEventListener(
+    "click",
+    () => {
 
-        const amount =
-          Number(
-            button.dataset.amount
-          );
+      const amount =
+        Number(button.dataset.amount);
 
+      const usd =
+        Number(button.dataset.usd);
 
-        const usd =
-          Number(
-            button.dataset.usd
-          );
+      updateSelectedAmount(
+        amount,
+        usd
+      );
 
+    }
+  );
 
-        updateSelectedAmount(
-          amount,
-          usd
-        );
-
-      }
-    );
-
-  }
-);
-
+});
 
 /*
 ========================================
-PAIEMENT CHARIOW
+CHARIOW
 ========================================
 
-IMPORTANT :
+ATTENTION :
 
-Le produit Chariow actuellement configuré
-est :
+Le checkout actuel est celui de 2 500 CDF.
 
-Recharge NOSMYBOOST – 2 500 CDF
+Il n'est donc pas possible de faire croire
+à Chariow qu'un même checkout représente
+automatiquement 1 000, 5 000 ou 10 000 CDF.
 
-Donc tous les montants autres que 2 500 CDF
-ne peuvent PAS utiliser ce checkout.
+Pour l'instant :
+
+- 2 500 CDF → checkout Chariow actuel
+- autres montants → WhatsApp
 
 ========================================
 */
 
 function goToChariow() {
 
-  /*
-  --------------------------------------
-  SÉCURITÉ
-  --------------------------------------
-  */
-
-  if (
-    selectedValue !== 2500
-  ) {
+  if (selectedValue !== 2500) {
 
     alert(
-      "Pour le moment, seul le paiement de 2 500 CDF est disponible via Chariow."
-    );
-
-    updateSelectedAmount(
-      2500,
-      1
+      "Le paiement automatique Chariow est actuellement disponible uniquement pour 2 500 CDF. Pour les autres montants, utilisez WhatsApp."
     );
 
     return;
 
   }
-
-
-  /*
-  --------------------------------------
-  MESSAGE
-  --------------------------------------
-  */
 
   if (payButton) {
 
@@ -389,22 +348,14 @@ function goToChariow() {
 
   }
 
-
-  /*
-  --------------------------------------
-  OUVRIR CHARIOW
-  --------------------------------------
-  */
-
   window.location.href =
     CHARIOW_CHECKOUT_URL;
 
 }
 
-
 /*
 ========================================
-BOUTON PAYER
+BOUTON PAIEMENT
 ========================================
 */
 
@@ -412,7 +363,7 @@ if (payButton) {
 
   payButton.addEventListener(
     "click",
-    function(event) {
+    event => {
 
       event.preventDefault();
 
@@ -422,7 +373,6 @@ if (payButton) {
   );
 
 }
-
 
 /*
 ========================================
@@ -437,10 +387,8 @@ function setupWhatsApp() {
       "Bonjour NOSMYBOOST 🇧🇪, je souhaite recharger mon compte."
     );
 
-
   const url =
     `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
-
 
   if (whatsappButton) {
 
@@ -448,7 +396,6 @@ function setupWhatsApp() {
       url;
 
   }
-
 
   if (manualWhatsapp) {
 
@@ -459,13 +406,11 @@ function setupWhatsApp() {
 
 }
 
-
 setupWhatsApp();
-
 
 /*
 ========================================
-HISTORIQUE DES DÉPÔTS
+HISTORIQUE DÉPÔTS
 ========================================
 */
 
@@ -474,18 +419,13 @@ async function loadDeposits() {
   if (!depositHistory)
     return;
 
-
   try {
 
     const data =
-      await api(
-        "/api/deposits/my"
-      );
-
+      await api("/api/deposits/my");
 
     const deposits =
       data.deposits || [];
-
 
     if (!deposits.length) {
 
@@ -507,93 +447,66 @@ async function loadDeposits() {
 
     }
 
+    depositHistory.innerHTML = "";
 
-    depositHistory.innerHTML =
-      "";
+    deposits.forEach(deposit => {
 
+      const item =
+        document.createElement("div");
 
-    deposits.forEach(
-      deposit => {
+      item.className =
+        "deposit-item";
 
-        const item =
-          document.createElement(
-            "div"
-          );
+      const amount =
+        formatMoney(deposit.amount);
 
-
-        item.className =
-          "deposit-item";
-
-
-        const amount =
-          formatMoney(
-            deposit.amount
-          );
-
-
-        const status =
-          String(
-            deposit.status ||
-            "pending"
-          );
-
-
-        let statusClass =
-          "status-pending";
-
-
-        if (
-          status === "completed"
-        ) {
-
-          statusClass =
-            "status-completed";
-
-        }
-
-
-        if (
-          status === "failed"
-        ) {
-
-          statusClass =
-            "status-failed";
-
-        }
-
-
-        item.innerHTML = `
-
-          <div>
-
-            <div class="deposit-amount">
-              ${amount} CDF
-            </div>
-
-            <div class="deposit-date">
-              ${escapeHtml(
-                deposit.created_at || ""
-              )}
-            </div>
-
-          </div>
-
-          <span
-            class="${statusClass}"
-          >
-            ${escapeHtml(status)}
-          </span>
-
-        `;
-
-
-        depositHistory.appendChild(
-          item
+      const status =
+        String(
+          deposit.status || "pending"
         );
 
-      }
-    );
+      let statusClass =
+        "status-pending";
 
+      if (status === "completed") {
+
+        statusClass =
+          "status-completed";
+
+      }
+
+      if (status === "failed") {
+
+        statusClass =
+          "status-failed";
+
+      }
+
+      item.innerHTML = `
+
+        <div>
+
+          <div class="deposit-amount">
+            ${amount} CDF
+          </div>
+
+          <div class="deposit-date">
+            ${escapeHtml(
+              deposit.created_at || ""
+            )}
+          </div>
+
+        </div>
+
+        <span class="${statusClass}">
+          ${escapeHtml(status)}
+        </span>
+
+      `;
+
+      depositHistory.appendChild(item);
+
+    });
 
   } catch (error) {
 
@@ -601,7 +514,6 @@ async function loadDeposits() {
       "Erreur historique dépôts:",
       error
     );
-
 
     depositHistory.innerHTML = `
 
@@ -621,7 +533,6 @@ async function loadDeposits() {
 
 }
 
-
 /*
 ========================================
 SÉCURITÉ HTML
@@ -630,37 +541,15 @@ SÉCURITÉ HTML
 
 function escapeHtml(value) {
 
-  return String(
-    value ?? ""
-  )
+  return String(value ?? "")
 
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-
-    .replace(
-      /</g,
-      "&lt;"
-    )
-
-    .replace(
-      />/g,
-      "&gt;"
-    )
-
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
 }
-
 
 /*
 ========================================
@@ -686,7 +575,6 @@ if (logoutButton) {
 
 }
 
-
 /*
 ========================================
 DÉMARRAGE
@@ -697,26 +585,12 @@ document.addEventListener(
   "DOMContentLoaded",
   async () => {
 
-    /*
-    Montant par défaut
-    */
-
     updateSelectedAmount(
-      2500,
-      1
+      1000,
+      0.40
     );
 
-
-    /*
-    Charger compte
-    */
-
     await loadUser();
-
-
-    /*
-    Charger historique
-    */
 
     await loadDeposits();
 
