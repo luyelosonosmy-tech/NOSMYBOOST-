@@ -11,15 +11,6 @@ const SMM_API_URL =
 const SMM_API_KEY =
   process.env.SMM_API_KEY;
 
-
-/*
-========================================
-NOSMYBOOST 🇧🇪
-SYNCHRONISATION AUTOMATIQUE COMMANDES
-SMM AFRICA
-========================================
-*/
-
 let syncRunning = false;
 
 
@@ -43,43 +34,28 @@ async function smmAfricaRequest(payload) {
       method: "POST",
 
       headers: {
-        "Content-Type":
-          "application/json",
-
+        "Content-Type": "application/json",
         "Authorization":
           `Bearer ${SMM_API_KEY}`
       },
 
-      body:
-        JSON.stringify(payload)
+      body: JSON.stringify(payload)
     }
   );
 
-
   const data =
-    await response
-      .json()
-      .catch(() => ({}));
-
+    await response.json().catch(() => ({}));
 
   if (!response.ok) {
-
     throw new Error(
       data.error ||
       `SMM Africa HTTP ${response.status}`
     );
-
   }
-
 
   if (data.error) {
-
-    throw new Error(
-      data.error
-    );
-
+    throw new Error(data.error);
   }
-
 
   return data;
 }
@@ -87,102 +63,38 @@ async function smmAfricaRequest(payload) {
 
 /*
 ========================================
-RÉCUPÉRER LES COMMANDES À SYNCHRONISER
+RÉCUPÉRER LES COMMANDES
+POSTGRESQL
 ========================================
 */
 
-function getOrdersToSync() {
+async function getOrdersToSync() {
 
-  return new Promise(
-    (resolve, reject) => {
+  const result =
+    await db.query(
+      `
+      SELECT
+        id,
+        provider_order_id,
+        status
+      FROM orders
+      WHERE provider_order_id IS NOT NULL
+        AND provider_order_id != ''
+        AND status IN (
+          'pending',
+          'processing'
+        )
+      ORDER BY id ASC
+      `
+    );
 
-      db.all(
-        `
-        SELECT
-
-          id,
-          provider_order_id,
-          status
-
-        FROM orders
-
-        WHERE provider_order_id IS NOT NULL
-
-          AND provider_order_id != ''
-
-          AND status IN (
-            'pending',
-            'processing'
-          )
-
-        ORDER BY id ASC
-        `,
-        [],
-        (error, rows) => {
-
-          if (error) {
-            return reject(error);
-          }
-
-          resolve(rows || []);
-
-        }
-      );
-
-    }
-  );
-
+  return result.rows || [];
 }
 
 
 /*
 ========================================
-METTRE À JOUR LE STATUT
-========================================
-*/
-
-function updateOrderStatus(
-  orderId,
-  status
-) {
-
-  return new Promise(
-    (resolve, reject) => {
-
-      db.run(
-        `
-        UPDATE orders
-
-        SET status = ?
-
-        WHERE id = ?
-        `,
-        [
-          status,
-          orderId
-        ],
-        function (error) {
-
-          if (error) {
-            return reject(error);
-          }
-
-          resolve(
-            this.changes
-          );
-
-        }
-      );
-
-    }
-  );
-
-}
-
-
-/*
-========================================
-TRADUCTION STATUT FOURNISSEUR
+TRADUIRE STATUT
 ========================================
 */
 
@@ -194,82 +106,80 @@ function normalizeStatus(status) {
       .trim();
 
 
-  /*
-  STATUTS TERMINÉS
-  */
-
   if (
     value === "completed" ||
     value === "complete" ||
     value === "done"
   ) {
-
     return "completed";
-
   }
 
-
-  /*
-  STATUTS EN TRAITEMENT
-  */
 
   if (
     value === "processing" ||
     value === "in progress" ||
     value === "in_progress"
   ) {
-
     return "processing";
-
   }
 
 
-  /*
-  STATUTS ANNULÉS
-  */
+  if (
+    value === "pending" ||
+    value === "queued"
+  ) {
+    return "pending";
+  }
+
 
   if (
     value === "canceled" ||
     value === "cancelled"
   ) {
-
     return "canceled";
-
   }
 
 
-  /*
-  STATUTS PARTIELS
-  */
-
-  if (
-    value === "partial"
-  ) {
-
+  if (value === "partial") {
     return "partial";
-
   }
 
 
-  /*
-  STATUTS REMBOURSÉS
-  */
-
-  if (
-    value === "refunded"
-  ) {
-
+  if (value === "refunded") {
     return "refunded";
-
   }
 
 
-  /*
-  PAR DÉFAUT
-  */
+  return "processing";
+}
 
-  return "pending";
 
+/*
+========================================
+METTRE À JOUR STATUT
+POSTGRESQL
+========================================
+*/
+
+async function updateOrderStatus(
+  orderId,
+  status
+) {
+
+  const result =
+    await db.query(
+      `
+      UPDATE orders
+      SET status = $1
+      WHERE id = $2
+      `,
+      [
+        status,
+        orderId
+      ]
+    );
+
+  return result.rowCount;
 }
 
 
@@ -291,8 +201,7 @@ async function syncOneOrder(order) {
     const providerResponse =
       await smmAfricaRequest({
 
-        action:
-          "status",
+        action: "status",
 
         order:
           String(
@@ -301,12 +210,6 @@ async function syncOneOrder(order) {
 
       });
 
-
-    /*
-    ==============================
-    STATUT FOURNISSEUR
-    ==============================
-    */
 
     const providerStatus =
       providerResponse?.status;
@@ -329,15 +232,8 @@ async function syncOneOrder(order) {
       );
 
 
-    /*
-    ==============================
-    SI LE STATUT N'A PAS CHANGÉ
-    ==============================
-    */
-
     if (
-      newStatus ===
-      order.status
+      newStatus === order.status
     ) {
 
       console.log(
@@ -348,12 +244,6 @@ async function syncOneOrder(order) {
 
     }
 
-
-    /*
-    ==============================
-    MISE À JOUR
-    ==============================
-    */
 
     await updateOrderStatus(
       order.id,
@@ -481,10 +371,6 @@ function startOrderStatusSync() {
   );
 
 
-  /*
-  PREMIÈRE VÉRIFICATION
-  */
-
   syncOrders()
     .catch(error => {
 
@@ -495,10 +381,6 @@ function startOrderStatusSync() {
 
     });
 
-
-  /*
-  PUIS TOUTES LES 60 SECONDES
-  */
 
   setInterval(
     () => {
