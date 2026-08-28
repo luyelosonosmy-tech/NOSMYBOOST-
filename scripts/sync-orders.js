@@ -11,8 +11,6 @@ const SMM_API_URL =
 const SMM_API_KEY =
   process.env.SMM_API_KEY;
 
-let syncRunning = false;
-
 
 /*
 ========================================
@@ -24,38 +22,54 @@ async function smmAfricaRequest(payload) {
 
   if (!SMM_API_KEY) {
     throw new Error(
-      "SMM_API_KEY manquante."
+      "SMM_API_KEY manquante dans .env"
     );
   }
 
-  const response = await fetch(
-    SMM_API_URL,
-    {
-      method: "POST",
+  const response =
+    await fetch(
+      SMM_API_URL,
+      {
+        method: "POST",
 
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization":
-          `Bearer ${SMM_API_KEY}`
-      },
+        headers: {
+          "Content-Type":
+            "application/json",
 
-      body: JSON.stringify(payload)
-    }
-  );
+          "Authorization":
+            `Bearer ${SMM_API_KEY}`
+        },
+
+        body:
+          JSON.stringify(payload)
+      }
+    );
+
 
   const data =
-    await response.json().catch(() => ({}));
+    await response
+      .json()
+      .catch(() => ({}));
+
 
   if (!response.ok) {
+
     throw new Error(
       data.error ||
       `SMM Africa HTTP ${response.status}`
     );
+
   }
 
+
   if (data.error) {
-    throw new Error(data.error);
+
+    throw new Error(
+      data.error
+    );
+
   }
+
 
   return data;
 }
@@ -63,12 +77,12 @@ async function smmAfricaRequest(payload) {
 
 /*
 ========================================
-RÉCUPÉRER LES COMMANDES
+RÉCUPÉRER COMMANDES
 POSTGRESQL
 ========================================
 */
 
-async function getOrdersToSync() {
+async function getProcessingOrders() {
 
   const result =
     await db.query(
@@ -94,16 +108,16 @@ async function getOrdersToSync() {
 
 /*
 ========================================
-TRADUIRE STATUT
+STATUT FOURNISSEUR
 ========================================
 */
 
-function normalizeStatus(status) {
+function convertStatus(status) {
 
   const value =
     String(status || "")
-      .toLowerCase()
-      .trim();
+      .trim()
+      .toLowerCase();
 
 
   if (
@@ -156,214 +170,46 @@ function normalizeStatus(status) {
 
 /*
 ========================================
-METTRE À JOUR STATUT
+METTRE À JOUR COMMANDE
 POSTGRESQL
 ========================================
 */
 
-async function updateOrderStatus(
+async function updateOrder(
   orderId,
   status
 ) {
 
-  const result =
-    await db.query(
-      `
-      UPDATE orders
-      SET status = $1
-      WHERE id = $2
-      `,
-      [
-        status,
-        orderId
-      ]
-    );
-
-  return result.rowCount;
-}
-
-
-/*
-========================================
-SYNCHRONISER UNE COMMANDE
-========================================
-*/
-
-async function syncOneOrder(order) {
-
-  try {
-
-    console.log(
-      `🔄 Vérification commande #${order.id} → SMM #${order.provider_order_id}`
-    );
-
-
-    const providerResponse =
-      await smmAfricaRequest({
-
-        action: "status",
-
-        order:
-          String(
-            order.provider_order_id
-          )
-
-      });
-
-
-    const providerStatus =
-      providerResponse?.status;
-
-
-    if (!providerStatus) {
-
-      console.log(
-        `⚠️ Aucun statut reçu pour #${order.id}`
-      );
-
-      return;
-
-    }
-
-
-    const newStatus =
-      normalizeStatus(
-        providerStatus
-      );
-
-
-    if (
-      newStatus === order.status
-    ) {
-
-      console.log(
-        `ℹ️ Commande #${order.id} toujours ${newStatus}`
-      );
-
-      return;
-
-    }
-
-
-    await updateOrderStatus(
-      order.id,
-      newStatus
-    );
-
-
-    console.log(
-      `✅ Commande #${order.id}: ${order.status} → ${newStatus}`
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      `❌ Erreur synchronisation commande #${order.id}:`,
-      error.message
-    );
-
-  }
+  await db.query(
+    `
+    UPDATE orders
+    SET status = $1
+    WHERE id = $2
+    `,
+    [
+      status,
+      orderId
+    ]
+  );
 
 }
 
 
 /*
 ========================================
-SYNCHRONISER TOUTES LES COMMANDES
+SYNCHRONISATION
 ========================================
 */
 
 async function syncOrders() {
 
-  if (syncRunning) {
-
-    console.log(
-      "⏳ Synchronisation déjà en cours..."
-    );
-
-    return;
-
-  }
-
-
-  syncRunning = true;
-
-
-  try {
-
-    const orders =
-      await getOrdersToSync();
-
-
-    if (
-      orders.length === 0
-    ) {
-
-      console.log(
-        "ℹ️ Aucune commande à synchroniser."
-      );
-
-      return;
-
-    }
-
-
-    console.log(
-      `🔎 ${orders.length} commande(s) à vérifier.`
-    );
-
-
-    for (
-      const order of orders
-    ) {
-
-      await syncOneOrder(
-        order
-      );
-
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      "❌ Erreur synchronisation globale:",
-      error.message
-    );
-
-
-  } finally {
-
-    syncRunning = false;
-
-  }
-
-}
-
-
-/*
-========================================
-DÉMARRER LA SYNCHRONISATION
-========================================
-*/
-
-function startOrderStatusSync() {
-
+  console.log("");
   console.log(
     "========================================"
   );
 
   console.log(
-    "NOSMYBOOST 🇧🇪"
-  );
-
-  console.log(
-    "SYNCHRONISATION COMMANDES ACTIVÉE"
-  );
-
-  console.log(
-    "Vérification toutes les 60 secondes"
+    "NOSMYBOOST - STATUTS SMM AFRICA"
   );
 
   console.log(
@@ -371,34 +217,66 @@ function startOrderStatusSync() {
   );
 
 
-  syncOrders()
-    .catch(error => {
-
-      console.error(
-        "Erreur première synchronisation:",
-        error.message
-      );
-
-    });
+  const orders =
+    await getProcessingOrders();
 
 
-  setInterval(
-    () => {
+  console.log(
+    `Commandes à vérifier : ${orders.length}`
+  );
 
-      syncOrders()
-        .catch(error => {
 
-          console.error(
-            "Erreur synchronisation:",
-            error.message
-          );
+  for (
+    const order of orders
+  ) {
+
+    try {
+
+      const providerResponse =
+        await smmAfricaRequest({
+
+          action: "status",
+
+          order:
+            String(
+              order.provider_order_id
+            )
 
         });
 
-    },
-    60 * 1000
-  );
 
+      const newStatus =
+        convertStatus(
+          providerResponse.status
+        );
+
+
+      await updateOrder(
+        order.id,
+        newStatus
+      );
+
+
+      console.log(
+        `Commande #${order.id} → ${newStatus}`
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        `Commande #${order.id}:`,
+        error.message
+      );
+
+    }
+
+  }
+
+
+  console.log(
+    "Synchronisation terminée."
+  );
 }
 
 
@@ -409,6 +287,5 @@ EXPORT
 */
 
 module.exports = {
-  startOrderStatusSync,
   syncOrders
 };
