@@ -3,21 +3,13 @@
 
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Recharger — NOSMYBOOST🇧🇪</title>
 
-  <link
-    rel="stylesheet"
-    href="/css/style.css"
-  >
+  <link rel="stylesheet" href="/css/style.css">
 
   <style>
-
     .deposit-page {
       padding: 40px 0 70px;
     }
@@ -52,7 +44,8 @@
       font-size: 30px;
     }
 
-    .payment-box {
+    .payment-box,
+    .history-box {
       background: white;
       border-radius: 20px;
       padding: 25px;
@@ -60,7 +53,8 @@
       margin-bottom: 25px;
     }
 
-    .payment-box h2 {
+    .payment-box h2,
+    .history-box h2 {
       margin-top: 0;
     }
 
@@ -69,10 +63,6 @@
       border-radius: 14px;
       padding: 16px;
       margin: 18px 0;
-    }
-
-    .payment-info strong {
-      color: #111827;
     }
 
     .amount-grid {
@@ -161,13 +151,6 @@
       margin-top: 0;
     }
 
-    .history-box {
-      background: white;
-      border-radius: 20px;
-      padding: 25px;
-      box-shadow: 0 8px 30px rgba(0,0,0,.06);
-    }
-
     .deposit-item {
       display: flex;
       justify-content: space-between;
@@ -206,7 +189,6 @@
     }
 
     @media (max-width: 600px) {
-
       .amount-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -215,327 +197,261 @@
       .history-box {
         padding: 18px;
       }
-
     }
-
   </style>
-
 </head>
-
 
 <body>
 
-  <!-- ==============================
-       NAVIGATION
-  =============================== -->
+<header class="navbar">
+  <div class="container nav-content">
 
-  <header class="navbar">
+    <a href="/dashboard.html" class="logo">
+      NOSMYBOOST🇧🇪
+    </a>
 
-    <div class="container nav-content">
+    <nav class="dashboard-nav">
+      <a href="/dashboard.html">Accueil</a>
+      <a href="/deposit.html">Recharger</a>
+      <a href="/orders.html">Commandes</a>
+    </nav>
+
+    <div class="nav-actions">
+      <span id="userName" class="user-name">
+        Chargement...
+      </span>
+
+      <button id="logoutButton" type="button" class="btn btn-outline">
+        Déconnexion
+      </button>
+    </div>
+
+  </div>
+</header>
+
+<main>
+
+<section class="deposit-page">
+
+<div class="container">
+
+  <div class="deposit-header">
+
+    <span class="eyebrow">
+      NOSMYBOOST🇧🇪
+    </span>
+
+    <h1>
+      Ajouter des fonds
+    </h1>
+
+    <p>
+      Rechargez votre compte à partir de 1 000 CDF.
+    </p>
+
+  </div>
+
+  <div class="balance-card">
+
+    <span>
+      Votre solde actuel
+    </span>
+
+    <strong id="currentBalance">
+      0 CDF
+    </strong>
+
+  </div>
+
+  <div class="payment-box">
+
+    <h2>
+      Choisissez votre montant
+    </h2>
+
+    <p>
+      Sélectionnez le montant que vous souhaitez ajouter à votre solde.
+    </p>
+
+    <div class="payment-info">
+
+      <strong>
+        ⚡ Paiement automatique activé
+      </strong>
+
+      <p>
+        Après confirmation du paiement,
+        votre recharge peut être créditée automatiquement.
+      </p>
+
+    </div>
+
+    <div class="amount-grid">
+
+      <button class="amount-btn"
+        data-amount="1000"
+        data-usd="0.40">
+        1 000 CDF
+        <small>≈ $0.40</small>
+      </button>
+
+      <button class="amount-btn"
+        data-amount="2500"
+        data-usd="1.00">
+        2 500 CDF
+        <small>≈ $1</small>
+      </button>
+
+      <button class="amount-btn"
+        data-amount="5000"
+        data-usd="2.00">
+        5 000 CDF
+        <small>≈ $2</small>
+      </button>
+
+      <button class="amount-btn"
+        data-amount="10000"
+        data-usd="4.00">
+        10 000 CDF
+        <small>≈ $4</small>
+      </button>
+
+      <button class="amount-btn"
+        data-amount="25000"
+        data-usd="10.00">
+        25 000 CDF
+        <small>≈ $10</small>
+      </button>
+
+      <button class="amount-btn"
+        data-amount="50000"
+        data-usd="20.00">
+        50 000 CDF
+        <small>≈ $20</small>
+      </button>
+
+      <button class="amount-btn"
+        data-amount="100000"
+        data-usd="40.00">
+        100 000 CDF
+        <small>≈ $40</small>
+      </button>
+
+      <button class="amount-btn"
+        data-amount="250000"
+        data-usd="100.00">
+        250 000 CDF
+        <small>≈ $100</small>
+      </button>
+
+      <button class="amount-btn"
+        data-amount="500000"
+        data-usd="200.00">
+        500 000 CDF
+        <small>≈ $200</small>
+      </button>
+
+    </div>
+
+    <div class="selected-amount">
+
+      <span>
+        Montant sélectionné
+      </span>
+
+      <strong id="selectedAmount">
+        1 000 CDF
+      </strong>
+
+      <p>
+        Sera facturé :
+        <strong id="selectedUsd">
+          $0.40 USD
+        </strong>
+      </p>
+
+    </div>
+
+    <div class="payment-buttons">
 
       <a
-        href="/dashboard.html"
-        class="logo"
-      >
-        NOSMYBOOST🇧🇪
+        id="payButton"
+        href="#"
+        target="_blank"
+        class="btn-payment">
+        💳 Payer 1 000 CDF
       </a>
 
-      <nav class="dashboard-nav">
+      <a
+        id="whatsappButton"
+        href="#"
+        target="_blank"
+        class="btn-whatsapp">
+        💬 Payer via WhatsApp
+      </a>
 
-        <a href="/dashboard.html">
-          Accueil
-        </a>
+    </div>
 
-        <a href="/deposit.html">
-          Recharger
-        </a>
+    <p style="margin-top:15px;">
+      ⚡ Le paiement automatique sera traité après confirmation du paiement.
+    </p>
 
-        <a href="/orders.html">
-          Commandes
-        </a>
+    <div class="manual-box">
 
-      </nav>
+      <h3>
+        💬 Paiement manuel
+      </h3>
 
-      <div class="nav-actions">
+      <p>
+        Pour un autre montant ou si vous préférez un paiement manuel,
+        contactez-nous directement sur WhatsApp.
+      </p>
 
-        <span
-          id="userName"
-          class="user-name"
-        >
+      <a
+        id="manualWhatsapp"
+        href="#"
+        target="_blank"
+        class="btn-whatsapp">
+        💬 Contacter WhatsApp
+      </a>
+
+    </div>
+
+  </div>
+
+  <div class="history-box">
+
+    <span class="eyebrow">
+      HISTORIQUE
+    </span>
+
+    <h2>
+      Mes dépôts
+    </h2>
+
+    <div id="depositHistory">
+
+      <div class="empty-state">
+
+        <span>💳</span>
+
+        <p>
           Chargement...
-        </span>
-
-        <button
-          id="logoutButton"
-          type="button"
-          class="btn btn-outline"
-        >
-          Déconnexion
-        </button>
+        </p>
 
       </div>
 
     </div>
 
-  </header>
-
-
-  <!-- ==============================
-       PAGE DÉPÔT
-  =============================== -->
-
-  <main>
-
-    <section class="deposit-page">
-
-      <div class="container">
-
-
-        <div class="deposit-header">
-
-          <span class="eyebrow">
-            NOSMYBOOST🇧🇪
-          </span>
-
-          <h1>
-            Ajouter des fonds
-          </h1>
-
-          <p>
-            Choisissez un montant pour recharger
-            votre solde.
-          </p>
-
-        </div>
-
-
-        <!-- SOLDE -->
-
-        <div class="balance-card">
-
-          <span>
-            Votre solde actuel
-          </span>
-
-          <strong id="currentBalance">
-            0 CDF
-          </strong>
-
-        </div>
-
-
-        <!-- PAIEMENT AUTOMATIQUE -->
-
-        <div class="payment-box">
-
-          <h2>
-            Choisissez votre montant
-          </h2>
-
-          <p>
-            Sélectionnez le montant que vous
-            souhaitez ajouter à votre solde.
-          </p>
-
-
-          <div class="payment-info">
-
-            <strong>
-              ⚡ Paiement automatique activé
-            </strong>
-
-            <p>
-              Après confirmation du paiement,
-              votre recharge peut être créditée
-              automatiquement.
-            </p>
-
-          </div>
-
-
-          <!-- MONTANTS -->
-
-<div class="amount-grid">
-
-  <button
-    class="amount-btn active"
-    data-amount="1000"
-    data-usd="0.40"
-  >
-    1 000 CDF
-    <small>≈ $0.40</small>
-  </button>
-
-
-  <button
-    class="amount-btn"
-    data-amount="2500"
-    data-usd="1.00"
-  >
-    2 500 CDF
-    <small>≈ $1</small>
-  </button>
-
-
-  <button
-    class="amount-btn"
-    data-amount="5000"
-    data-usd="2.00"
-  >
-    5 000 CDF
-    <small>≈ $2</small>
-  </button>
-
-
-  <button
-    class="amount-btn"
-    data-amount="12500"
-    data-usd="5.00"
-  >
-    12 500 CDF
-    <small>≈ $5</small>
-  </button>
-
-
-  <button
-    class="amount-btn"
-    data-amount="25000"
-    data-usd="10.00"
-  >
-    25 000 CDF
-    <small>≈ $10</small>
-  </button>
-
-
-  <button
-    class="amount-btn"
-    data-amount="50000"
-    data-usd="20.00"
-  >
-    50 000 CDF
-    <small>≈ $20</small>
-  </button>
-
-
-  <button
-    class="amount-btn"
-    data-amount="125000"
-    data-usd="50.00"
-  >
-    125 000 CDF
-    <small>≈ $50</small>
-  </button>
+  </div>
 
 </div>
 
+</section>
 
-          <!-- PAIEMENT -->
+</main>
 
-          <div class="payment-buttons">
-
-            <a
-              id="payButton"
-              href="#"
-              target="_blank"
-              class="btn-payment"
-            >
-              💳 Payer 2 500 CDF
-            </a>
-
-            <a
-              id="whatsappButton"
-              href="#"
-              target="_blank"
-              class="btn-whatsapp"
-            >
-              💬 Payer via WhatsApp
-            </a>
-
-          </div>
-
-
-          <p style="margin-top:15px;">
-            ⚡ Le paiement automatique sera
-            traité après confirmation du paiement.
-          </p>
-
-
-          <!-- PAIEMENT MANUEL -->
-
-          <div class="manual-box">
-
-            <h3>
-              💬 Paiement manuel
-            </h3>
-
-            <p>
-              Pour un autre montant ou si vous
-              préférez un paiement manuel,
-              contactez-nous directement sur
-              WhatsApp.
-            </p>
-
-            <a
-              id="manualWhatsapp"
-              href="#"
-              target="_blank"
-              class="btn-whatsapp"
-            >
-              💬 Contacter WhatsApp
-            </a>
-
-          </div>
-
-        </div>
-
-
-        <!-- ==============================
-             HISTORIQUE
-        =============================== -->
-
-        <div class="history-box">
-
-          <span class="eyebrow">
-            HISTORIQUE
-          </span>
-
-          <h2>
-            Mes dépôts
-          </h2>
-
-
-          <div id="depositHistory">
-
-            <div class="empty-state">
-
-              <span>
-                💳
-              </span>
-
-              <p>
-                Chargement...
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <!-- ==============================
-       JAVASCRIPT
-  =============================== -->
-
-  <script src="/js/deposit.js"></script>
+<script src="/js/deposit.js"></script>
 
 </body>
-
 </html>
