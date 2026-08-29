@@ -1,436 +1,548 @@
-<!DOCTYPE html>
-<html lang="fr">
+<!DOCTYPE html><html lang="fr"><head>  <meta charset="UTF-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
 
-<head>
+«»
 
-  <meta charset="UTF-8">
+<meta
+name="description"
+content="NOSMYBOOST🇧🇪 — Panel SMM professionnel"
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+«»
 
-  <meta
-    name="description"
-    content="NOSMYBOOST🇧🇪 — Panel SMM professionnel"
-  >
-
-  <title>NOSMYBOOST🇧🇪 — Panel SMM</title>
-
-  <link
+  <title>NOSMYBOOST🇧🇪 — Panel SMM</title>  <link
     rel="stylesheet"
     href="/css/style.css"
-  >
+  >  <style>
 
-</head>
+    /* ========================================
+       NOSMYBOOST 🇧🇪
+       COULEURS : VERT + BLANC
+    ======================================== */
+
+    :root {
+      --green: #16a34a;
+      --green-dark: #15803d;
+      --green-light: #dcfce7;
+      --white: #ffffff;
+      --text: #102018;
+    }
 
 
-<body>
+    /* ========================================
+       LOGO
+    ======================================== */
 
-  <!-- ================================
+    .logo {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+    }
+
+
+    .logo img {
+      height: 48px;
+      width: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+
+    /* ========================================
+       COULEURS PRINCIPALES
+    ======================================== */
+
+    body {
+      background: var(--white);
+      color: var(--text);
+    }
+
+
+    .navbar {
+      background: var(--white);
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+
+    .btn-primary {
+      background: var(--green);
+      border-color: var(--green);
+      color: var(--white);
+    }
+
+
+    .btn-primary:hover {
+      background: var(--green-dark);
+      border-color: var(--green-dark);
+    }
+
+
+    .btn-outline {
+      color: var(--green);
+      border-color: var(--green);
+      background: var(--white);
+    }
+
+
+    .btn-outline:hover {
+      background: var(--green-light);
+    }
+
+
+    .badge {
+      color: var(--green-dark);
+      background: var(--green-light);
+    }
+
+
+    .hero {
+      background: linear-gradient(
+        135deg,
+        #ffffff 0%,
+        #f0fdf4 100%
+      );
+    }
+
+
+    .hero h1 span {
+      color: var(--green);
+    }
+
+
+    .balance-card {
+      background: var(--green);
+      color: var(--white);
+    }
+
+
+    .features {
+      background: var(--white);
+    }
+
+
+    .feature-card {
+      background: var(--white);
+      border-color: #dcfce7;
+    }
+
+
+    .feature-icon {
+      background: var(--green-light);
+    }
+
+
+    .platforms {
+      background: #f0fdf4;
+    }
+
+
+    .platform-card {
+      background: var(--white);
+      border-color: #dcfce7;
+    }
+
+
+    .cta {
+      background: var(--green);
+      color: var(--white);
+    }
+
+
+    footer {
+      background: #052e16;
+      color: var(--white);
+    }
+
+
+    footer a {
+      color: var(--white);
+    }
+
+  </style></head><body>  <!-- ================================
        NAVIGATION
-  ================================= -->
+  ================================= -->  <header class="navbar"><div class="container nav-content">
 
-  <header class="navbar">
-
-    <div class="container nav-content">
-
-      <a
-        href="/"
-        class="logo"
-      >
-        NOSMYBOOST🇧🇪
-      </a>
-
-
-      <div class="nav-actions">
-
-        <select
-          id="language"
-          aria-label="Langue"
-        >
-
-          <option value="fr">
-            Français
-          </option>
-
-          <option value="en">
-            English
-          </option>
-
-        </select>
+  <a
+    href="/"
+    class="logo"
+  >
+    <img
+      src="/logo.png"
+      alt="NOSMYBOOST"
+    >
+  </a>
 
 
-        <a
-          href="/login.html"
-          class="btn btn-outline"
-        >
-          Connexion
-        </a>
+  <div class="nav-actions">
+
+    <select
+      id="language"
+      aria-label="Langue"
+    >
+
+      <option value="fr">
+        Français
+      </option>
+
+      <option value="en">
+        English
+      </option>
+
+    </select>
 
 
-        <a
-          href="/register.html"
-          class="btn btn-primary"
-        >
-          Créer un compte
-        </a>
-
-      </div>
-
-    </div>
-
-  </header>
+    <a
+      href="/login.html"
+      class="btn btn-outline"
+    >
+      Connexion
+    </a>
 
 
-  <!-- ================================
+    <a
+      href="/register.html"
+      class="btn btn-primary"
+    >
+      Créer un compte
+    </a>
+
+  </div>
+
+</div>
+
+  </header>  <!-- ================================
        HERO
-  ================================= -->
+  ================================= -->  <main><section class="hero">
 
-  <main>
+  <div class="container hero-content">
 
-    <section class="hero">
+    <div class="hero-text">
 
-      <div class="container hero-content">
+      <span class="badge">
+        🇧🇪 NOSMYBOOST
+      </span>
 
-        <div class="hero-text">
 
-          <span class="badge">
-            🇧🇪 NOSMYBOOST
-          </span>
+      <h1>
+        Développez vos réseaux sociaux
+        <span>simplement.</span>
+      </h1>
 
 
-          <h1>
-            Développez vos réseaux sociaux
-            <span>simplement.</span>
-          </h1>
+      <p>
+        Commandez vos services SMM,
+        rechargez votre solde et suivez
+        toutes vos commandes depuis
+        une seule plateforme.
+      </p>
 
 
-          <p>
-            Commandez vos services SMM,
-            rechargez votre solde et suivez
-            toutes vos commandes depuis
-            une seule plateforme.
-          </p>
-
-
-          <div class="hero-buttons">
-
-            <a
-              href="/register.html"
-              class="btn btn-primary btn-large"
-            >
-              Commencer maintenant
-            </a>
-
-
-            <a
-              href="/login.html"
-              class="btn btn-outline btn-large"
-            >
-              J'ai déjà un compte
-            </a>
-
-          </div>
-
-        </div>
-
-
-        <div class="hero-card">
-
-          <div class="balance-card">
-
-            <p>
-              Solde disponible
-            </p>
-
-            <strong>
-              0 CDF
-            </strong>
-
-            <span>
-              NOSMYBOOST🇧🇪
-            </span>
-
-          </div>
-
-
-          <div class="mini-stats">
-
-            <div>
-
-              <strong>
-                0
-              </strong>
-
-              <span>
-                Commandes
-              </span>
-
-            </div>
-
-
-            <div>
-
-              <strong>
-                0 CDF
-              </strong>
-
-              <span>
-                Dépensé
-              </span>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ================================
-         AVANTAGES
-    ================================= -->
-
-    <section class="features">
-
-      <div class="container">
-
-        <div class="section-title">
-
-          <span>
-            NOS SERVICES
-          </span>
-
-          <h2>
-            Tout ce qu'il vous faut
-          </h2>
-
-          <p>
-            Une plateforme simple pour gérer
-            vos commandes et votre solde.
-          </p>
-
-        </div>
-
-
-        <div class="feature-grid">
-
-          <article class="feature-card">
-
-            <div class="feature-icon">
-              🚀
-            </div>
-
-            <h3>
-              Services variés
-            </h3>
-
-            <p>
-              Instagram, Facebook, TikTok,
-              YouTube et plusieurs autres
-              plateformes.
-            </p>
-
-          </article>
-
-
-          <article class="feature-card">
-
-            <div class="feature-icon">
-              💳
-            </div>
-
-            <h3>
-              Paiement local
-            </h3>
-
-            <p>
-              Rechargez votre compte avec
-              Airtel Money, Vodacom M-Pesa
-              ou Orange Money.
-            </p>
-
-          </article>
-
-
-          <article class="feature-card">
-
-            <div class="feature-icon">
-              📊
-            </div>
-
-            <h3>
-              Suivi des commandes
-            </h3>
-
-            <p>
-              Consultez facilement l'état de
-              toutes vos commandes.
-            </p>
-
-          </article>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ================================
-         PLATEFORMES
-    ================================= -->
-
-    <section class="platforms">
-
-      <div class="container">
-
-        <div class="section-title">
-
-          <span>
-            PLATEFORMES
-          </span>
-
-          <h2>
-            Boostez votre présence
-          </h2>
-
-        </div>
-
-
-        <div class="platform-grid">
-
-          <div class="platform-card">
-            📸
-            <strong>Instagram</strong>
-          </div>
-
-          <div class="platform-card">
-            👍
-            <strong>Facebook</strong>
-          </div>
-
-          <div class="platform-card">
-            🎵
-            <strong>TikTok</strong>
-          </div>
-
-          <div class="platform-card">
-            ▶️
-            <strong>YouTube</strong>
-          </div>
-
-          <div class="platform-card">
-            ✈️
-            <strong>Telegram</strong>
-          </div>
-
-          <div class="platform-card">
-            𝕏
-            <strong>X</strong>
-          </div>
-
-          <div class="platform-card">
-            👻
-            <strong>Snapchat</strong>
-          </div>
-
-          <div class="platform-card">
-            💬
-            <strong>WhatsApp</strong>
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ================================
-         CTA
-    ================================= -->
-
-    <section class="cta">
-
-      <div class="container">
-
-        <h2>
-          Prêt à commencer ?
-        </h2>
-
-        <p>
-          Créez votre compte NOSMYBOOST🇧🇪
-          et commencez dès maintenant.
-        </p>
+      <div class="hero-buttons">
 
         <a
           href="/register.html"
           class="btn btn-primary btn-large"
         >
-          Créer mon compte
+          Commencer maintenant
+        </a>
+
+
+        <a
+          href="/login.html"
+          class="btn btn-outline btn-large"
+        >
+          J'ai déjà un compte
         </a>
 
       </div>
 
-    </section>
-
-  </main>
+    </div>
 
 
-  <!-- ================================
-       FOOTER
-  ================================= -->
+    <div class="hero-card">
 
-  <footer>
-
-    <div class="container footer-content">
-
-      <div>
-
-        <strong>
-          NOSMYBOOST🇧🇪
-        </strong>
+      <div class="balance-card">
 
         <p>
-          Votre panel SMM professionnel.
+          Solde disponible
         </p>
 
+        <strong>
+          0 CDF
+        </strong>
+
+        <span>
+          NOSMYBOOST🇧🇪
+        </span>
+
       </div>
 
 
-      <div class="footer-links">
+      <div class="mini-stats">
 
-        <a href="/">
-          Accueil
-        </a>
+        <div>
 
-        <a href="/login.html">
-          Connexion
-        </a>
+          <strong>
+            0
+          </strong>
 
-        <a href="/register.html">
-          Inscription
-        </a>
+          <span>
+            Commandes
+          </span>
+
+        </div>
+
+
+        <div>
+
+          <strong>
+            0 CDF
+          </strong>
+
+          <span>
+            Dépensé
+          </span>
+
+        </div>
 
       </div>
 
     </div>
 
+  </div>
 
-    <div class="container copyright">
+</section>
 
-      © 2026 NOSMYBOOST🇧🇪 —
-      Tous droits réservés.
+
+<!-- ================================
+     AVANTAGES
+================================= -->
+
+<section class="features">
+
+  <div class="container">
+
+    <div class="section-title">
+
+      <span>
+        NOS SERVICES
+      </span>
+
+      <h2>
+        Tout ce qu'il vous faut
+      </h2>
+
+      <p>
+        Une plateforme simple pour gérer
+        vos commandes et votre solde.
+      </p>
 
     </div>
 
-  </footer>
 
-</body>
+    <div class="feature-grid">
 
-  </html>
+      <article class="feature-card">
+
+        <div class="feature-icon">
+          🚀
+        </div>
+
+        <h3>
+          Services variés
+        </h3>
+
+        <p>
+          Instagram, Facebook, TikTok,
+          YouTube et plusieurs autres
+          plateformes.
+        </p>
+
+      </article>
+
+
+      <article class="feature-card">
+
+        <div class="feature-icon">
+          💳
+        </div>
+
+        <h3>
+          Paiement local
+        </h3>
+
+        <p>
+          Rechargez votre compte avec
+          Airtel Money, Vodacom M-Pesa
+          ou Orange Money.
+        </p>
+
+      </article>
+
+
+      <article class="feature-card">
+
+        <div class="feature-icon">
+          📊
+        </div>
+
+        <h3>
+          Suivi des commandes
+        </h3>
+
+        <p>
+          Consultez facilement l'état de
+          toutes vos commandes.
+        </p>
+
+      </article>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================================
+     PLATEFORMES
+================================= -->
+
+<section class="platforms">
+
+  <div class="container">
+
+    <div class="section-title">
+
+      <span>
+        PLATEFORMES
+      </span>
+
+      <h2>
+        Boostez votre présence
+      </h2>
+
+    </div>
+
+
+    <div class="platform-grid">
+
+      <div class="platform-card">
+        📸
+        <strong>Instagram</strong>
+      </div>
+
+      <div class="platform-card">
+        👍
+        <strong>Facebook</strong>
+      </div>
+
+      <div class="platform-card">
+        🎵
+        <strong>TikTok</strong>
+      </div>
+
+      <div class="platform-card">
+        ▶️
+        <strong>YouTube</strong>
+      </div>
+
+      <div class="platform-card">
+        ✈️
+        <strong>Telegram</strong>
+      </div>
+
+      <div class="platform-card">
+        𝕏
+        <strong>X</strong>
+      </div>
+
+      <div class="platform-card">
+        👻
+        <strong>Snapchat</strong>
+      </div>
+
+      <div class="platform-card">
+        💬
+        <strong>WhatsApp</strong>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================================
+     CTA
+================================= -->
+
+<section class="cta">
+
+  <div class="container">
+
+    <h2>
+      Prêt à commencer ?
+    </h2>
+
+    <p>
+      Créez votre compte NOSMYBOOST🇧🇪
+      et commencez dès maintenant.
+    </p>
+
+    <a
+      href="/register.html"
+      class="btn btn-primary btn-large"
+    >
+      Créer mon compte
+    </a>
+
+  </div>
+
+</section>
+
+  </main>  <!-- ================================
+       FOOTER
+  ================================= -->  <footer><div class="container footer-content">
+
+  <div>
+
+    <strong>
+      NOSMYBOOST🇧🇪
+    </strong>
+
+    <p>
+      Votre panel SMM professionnel.
+    </p>
+
+  </div>
+
+
+  <div class="footer-links">
+
+    <a href="/">
+      Accueil
+    </a>
+
+    <a href="/login.html">
+      Connexion
+    </a>
+
+    <a href="/register.html">
+      Inscription
+    </a>
+
+  </div>
+
+</div>
+
+
+<div class="container copyright">
+
+  © 2026 NOSMYBOOST🇧🇪 —
+  Tous droits réservés.
+
+</div>
+
+  </footer></body></html>
