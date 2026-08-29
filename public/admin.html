@@ -85,8 +85,8 @@
           </h1>
 
           <p>
-            Gestion des dépôts et des commandes
-            de vos clients.
+            Gestion des dépôts, des soldes
+            et des commandes de vos clients.
           </p>
 
         </div>
@@ -220,7 +220,7 @@
 
 
         <!-- ==============================
-             COMMANDES
+             RESTAURATION DU SOLDE
         =============================== -->
 
         <section
@@ -232,45 +232,55 @@
           <div class="section-title">
 
             <span>
-              COMMANDES
+              CORRECTION DU SOLDE
             </span>
 
             <h2>
-              Dernières commandes
+              Restaurer le solde d'un client
             </h2>
+
+            <p>
+              Utilisez cette fonction uniquement
+              lorsqu'un solde client a été perdu
+              ou doit être corrigé.
+            </p>
 
           </div>
 
 
           <div
-            id="adminOrders"
-            class="feature-grid"
+            class="feature-card"
+            style="
+              max-width:600px;
+              margin:0 auto;
+            "
           >
 
-            <p
-              style="
-                grid-column:1/-1;
-                text-align:center;
-                color:#667085;
-              "
+            <form
+              id="restoreBalanceForm"
             >
-              Chargement...
-            </p>
 
-          </div>
+              <div
+                style="
+                  margin-bottom:18px;
+                "
+              >
 
-        </section>
+                <label
+                  for="restoreUserId"
+                  style="
+                    display:block;
+                    margin-bottom:8px;
+                    font-weight:700;
+                  "
+                >
+                  ID du client
+                </label>
 
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <script src="/js/admin.js"></script>
-
-</body>
-
-</html>
+                <input
+                  id="restoreUserId"
+                  name="user_id"
+                  type="number"
+                  min="1"
+                  required
+                  placeholder="
