@@ -6,12 +6,7 @@ const { Pool } = require("pg");
 ========================================
 NOSMYBOOST 🇧🇪
 DATABASE POSTGRESQL
-========================================
-*/
-
-/*
-========================================
-VÉRIFIER DATABASE_URL
+CLIENT WALLET + ADMIN FINANCIAL HISTORY
 ========================================
 */
 
@@ -48,12 +43,6 @@ const pool = new Pool({
   connectionTimeoutMillis: 10000
 });
 
-
-/*
-========================================
-TEST CONNEXION
-========================================
-*/
 
 pool.on("connect", () => {
 
@@ -111,13 +100,33 @@ async function initializeDatabase() {
 
         password TEXT NOT NULL,
 
-        balance NUMERIC(14,2) NOT NULL DEFAULT 0,
+        /*
+        WALLET CLIENT UNIQUEMENT
+        */
 
-        total_deposited NUMERIC(14,2) NOT NULL DEFAULT 0,
+        balance NUMERIC(14,2)
+          NOT NULL
+          DEFAULT 0,
 
-        total_spent NUMERIC(14,2) NOT NULL DEFAULT 0,
+        /*
+        TOTAL DES DÉPÔTS DU CLIENT
+        */
 
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        total_deposited NUMERIC(14,2)
+          NOT NULL
+          DEFAULT 0,
+
+        /*
+        TOTAL DÉPENSÉ PAR LE CLIENT
+        */
+
+        total_spent NUMERIC(14,2)
+          NOT NULL
+          DEFAULT 0,
+
+        created_at TIMESTAMPTZ
+          NOT NULL
+          DEFAULT CURRENT_TIMESTAMP
 
       )
     `);
@@ -140,19 +149,28 @@ async function initializeDatabase() {
 
         description TEXT,
 
-        price NUMERIC(14,2) NOT NULL,
+        price NUMERIC(14,2)
+          NOT NULL,
 
-        min_quantity INTEGER NOT NULL DEFAULT 100,
+        min_quantity INTEGER
+          NOT NULL
+          DEFAULT 100,
 
-        max_quantity INTEGER NOT NULL DEFAULT 1000000,
+        max_quantity INTEGER
+          NOT NULL
+          DEFAULT 1000000,
 
         provider TEXT,
 
         provider_service_id TEXT,
 
-        active INTEGER NOT NULL DEFAULT 1,
+        active INTEGER
+          NOT NULL
+          DEFAULT 1,
 
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ
+          NOT NULL
+          DEFAULT CURRENT_TIMESTAMP
 
       )
     `);
@@ -179,13 +197,17 @@ async function initializeDatabase() {
 
         price NUMERIC(14,2) NOT NULL,
 
-        status TEXT NOT NULL DEFAULT 'pending',
+        status TEXT
+          NOT NULL
+          DEFAULT 'pending',
 
         provider_service_id TEXT,
 
         provider_order_id TEXT,
 
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ
+          NOT NULL
+          DEFAULT CURRENT_TIMESTAMP
 
       )
     `);
@@ -210,13 +232,64 @@ async function initializeDatabase() {
 
         proof TEXT,
 
-        status TEXT NOT NULL DEFAULT 'pending',
+        status TEXT
+          NOT NULL
+          DEFAULT 'pending',
 
         provider TEXT,
 
         provider_payment_id TEXT UNIQUE,
 
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMPTZ
+          NOT NULL
+          DEFAULT CURRENT_TIMESTAMP
+
+      )
+    `);
+
+
+    /*
+    ========================================
+    TRANSACTIONS
+    ========================================
+    
+    HISTORIQUE FINANCIER
+    
+    deposit    = dépôt client
+    purchase   = achat/service
+    refund     = remboursement
+    adjustment = correction manuelle admin
+    
+    IMPORTANT:
+    Cette table est un HISTORIQUE.
+    Elle ne constitue PAS un wallet admin.
+    ========================================
+    */
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS transactions (
+
+        id BIGSERIAL PRIMARY KEY,
+
+        user_id BIGINT NOT NULL,
+
+        type TEXT NOT NULL,
+
+        amount NUMERIC(14,2) NOT NULL,
+
+        balance_before NUMERIC(14,2),
+
+        balance_after NUMERIC(14,2),
+
+        reference_id BIGINT,
+
+        reason TEXT,
+
+        created_by TEXT,
+
+        created_at TIMESTAMPTZ
+          NOT NULL
+          DEFAULT CURRENT_TIMESTAMP
 
       )
     `);
@@ -253,7 +326,8 @@ async function initializeDatabase() {
 
 
     await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_services_provider_service_id
+      CREATE INDEX IF NOT EXISTS
+      idx_services_provider_service_id
       ON services(provider_service_id)
     `);
 
@@ -283,7 +357,8 @@ async function initializeDatabase() {
 
 
     await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_orders_provider_order_id
+      CREATE INDEX IF NOT EXISTS
+      idx_orders_provider_order_id
       ON orders(provider_order_id)
     `);
 
@@ -295,69 +370,97 @@ async function initializeDatabase() {
     */
 
     await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_deposits_user_id
+      CREATE INDEX IF NOT EXISTS
+      idx_deposits_user_id
       ON deposits(user_id)
     `);
 
 
     await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_deposits_status
+      CREATE INDEX IF NOT EXISTS
+      idx_deposits_status
       ON deposits(status)
     `);
 
 
     /*
     ========================================
-    CONTRAINTES / COLONNES EXISTANTES
+    INDEX TRANSACTIONS
     ========================================
     */
 
-    /*
-    Ces ALTER TABLE sont volontairement
-    protégés par IF NOT EXISTS afin que
-    le fichier puisse être exécuté plusieurs fois.
-    */
-
-
     await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS provider_service_id TEXT
+      CREATE INDEX IF NOT EXISTS
+      idx_transactions_user_id
+      ON transactions(user_id)
     `);
 
 
     await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS provider_order_id TEXT
+      CREATE INDEX IF NOT EXISTS
+      idx_transactions_type
+      ON transactions(type)
     `);
 
 
     await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS provider TEXT
-    `);
-
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS provider_service_id TEXT
-    `);
-
-
-    await client.query(`
-      ALTER TABLE deposits
-      ADD COLUMN IF NOT EXISTS provider TEXT
-    `);
-
-
-    await client.query(`
-      ALTER TABLE deposits
-      ADD COLUMN IF NOT EXISTS provider_payment_id TEXT
+      CREATE INDEX IF NOT EXISTS
+      idx_transactions_created_at
+      ON transactions(created_at)
     `);
 
 
     /*
     ========================================
-    FOREIGN KEYS
+    COLONNES EXISTANTES
+    ========================================
+    */
+
+    await client.query(`
+      ALTER TABLE orders
+      ADD COLUMN IF NOT EXISTS
+      provider_service_id TEXT
+    `);
+
+
+    await client.query(`
+      ALTER TABLE orders
+      ADD COLUMN IF NOT EXISTS
+      provider_order_id TEXT
+    `);
+
+
+    await client.query(`
+      ALTER TABLE services
+      ADD COLUMN IF NOT EXISTS
+      provider TEXT
+    `);
+
+
+    await client.query(`
+      ALTER TABLE services
+      ADD COLUMN IF NOT EXISTS
+      provider_service_id TEXT
+    `);
+
+
+    await client.query(`
+      ALTER TABLE deposits
+      ADD COLUMN IF NOT EXISTS
+      provider TEXT
+    `);
+
+
+    await client.query(`
+      ALTER TABLE deposits
+      ADD COLUMN IF NOT EXISTS
+      provider_payment_id TEXT
+    `);
+
+
+    /*
+    ========================================
+    FOREIGN KEY ORDERS → USERS
     ========================================
     */
 
@@ -368,11 +471,13 @@ async function initializeDatabase() {
         IF NOT EXISTS (
           SELECT 1
           FROM pg_constraint
-          WHERE conname = 'orders_user_id_fkey'
+          WHERE conname =
+            'orders_user_id_fkey'
         ) THEN
 
           ALTER TABLE orders
-          ADD CONSTRAINT orders_user_id_fkey
+          ADD CONSTRAINT
+          orders_user_id_fkey
           FOREIGN KEY (user_id)
           REFERENCES users(id)
           ON DELETE CASCADE;
@@ -384,6 +489,12 @@ async function initializeDatabase() {
     `);
 
 
+    /*
+    ========================================
+    FOREIGN KEY ORDERS → SERVICES
+    ========================================
+    */
+
     await client.query(`
       DO $$
       BEGIN
@@ -391,11 +502,13 @@ async function initializeDatabase() {
         IF NOT EXISTS (
           SELECT 1
           FROM pg_constraint
-          WHERE conname = 'orders_service_id_fkey'
+          WHERE conname =
+            'orders_service_id_fkey'
         ) THEN
 
           ALTER TABLE orders
-          ADD CONSTRAINT orders_service_id_fkey
+          ADD CONSTRAINT
+          orders_service_id_fkey
           FOREIGN KEY (service_id)
           REFERENCES services(id)
           ON DELETE RESTRICT;
@@ -407,6 +520,12 @@ async function initializeDatabase() {
     `);
 
 
+    /*
+    ========================================
+    FOREIGN KEY DEPOSITS → USERS
+    ========================================
+    */
+
     await client.query(`
       DO $$
       BEGIN
@@ -414,11 +533,13 @@ async function initializeDatabase() {
         IF NOT EXISTS (
           SELECT 1
           FROM pg_constraint
-          WHERE conname = 'deposits_user_id_fkey'
+          WHERE conname =
+            'deposits_user_id_fkey'
         ) THEN
 
           ALTER TABLE deposits
-          ADD CONSTRAINT deposits_user_id_fkey
+          ADD CONSTRAINT
+          deposits_user_id_fkey
           FOREIGN KEY (user_id)
           REFERENCES users(id)
           ON DELETE CASCADE;
@@ -432,7 +553,38 @@ async function initializeDatabase() {
 
     /*
     ========================================
-    FIN TRANSACTION
+    FOREIGN KEY TRANSACTIONS → USERS
+    ========================================
+    */
+
+    await client.query(`
+      DO $$
+      BEGIN
+
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+            'transactions_user_id_fkey'
+        ) THEN
+
+          ALTER TABLE transactions
+          ADD CONSTRAINT
+          transactions_user_id_fkey
+          FOREIGN KEY (user_id)
+          REFERENCES users(id)
+          ON DELETE CASCADE;
+
+        END IF;
+
+      END
+      $$;
+    `);
+
+
+    /*
+    ========================================
+    FIN
     ========================================
     */
 
@@ -444,7 +596,7 @@ async function initializeDatabase() {
     );
 
     console.log(
-      "✅ BASE POSTGRESQL NOSMYBOOST PRÊTE"
+      "✅ BASE NOSMYBOOST PRÊTE"
     );
 
     console.log(
@@ -452,19 +604,23 @@ async function initializeDatabase() {
     );
 
     console.log(
-      "✅ Table users"
+      "✅ Users"
     );
 
     console.log(
-      "✅ Table services"
+      "✅ Services"
     );
 
     console.log(
-      "✅ Table orders"
+      "✅ Orders"
     );
 
     console.log(
-      "✅ Table deposits"
+      "✅ Deposits"
+    );
+
+    console.log(
+      "✅ Transactions"
     );
 
     console.log(
@@ -494,7 +650,7 @@ async function initializeDatabase() {
 
 /*
 ========================================
-INITIALISER AUTOMATIQUEMENT
+INITIALISATION AUTOMATIQUE
 ========================================
 */
 
