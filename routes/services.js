@@ -7,451 +7,468 @@ const authenticateToken = require("../middleware/auth");
 const router = express.Router();
 
 /*
-========================================
+
 NOSMYBOOST 🇧🇪
 SERVICES ROUTES
 POSTGRESQL
-========================================
+VERSION CORRIGÉE
+
 */
 
-
 /*
-========================================
+
 NORMALISER PLATEFORME
-========================================
+
 */
 
 function normalizePlatform(value) {
 
-  const text = String(value || "")
-    .trim()
-    .toLowerCase();
+const text = String(value || "")
+.trim()
+.toLowerCase();
 
-  if (text === "instagram")
-    return "Instagram";
+if (text === "instagram")
+return "Instagram";
 
-  if (text === "facebook")
-    return "Facebook";
+if (text === "facebook")
+return "Facebook";
 
-  if (
-    text === "tiktok" ||
-    text === "tik tok"
-  )
-    return "TikTok";
+if (
+text === "tiktok" ||
+text === "tik tok"
+)
+return "TikTok";
 
-  if (
-    text === "youtube" ||
-    text === "youtube.com"
-  )
-    return "YouTube";
+if (
+text === "youtube" ||
+text === "youtube.com"
+)
+return "YouTube";
 
-  if (text === "telegram")
-    return "Telegram";
+if (text === "telegram")
+return "Telegram";
 
-  if (
-    text === "x" ||
-    text === "twitter" ||
-    text === "twitter/x"
-  )
-    return "X";
+if (
+text === "x" ||
+text === "twitter" ||
+text === "twitter/x"
+)
+return "X";
 
-  if (text === "snapchat")
-    return "Snapchat";
+if (text === "snapchat")
+return "Snapchat";
 
-  if (text === "whatsapp")
-    return "WhatsApp";
+if (text === "whatsapp")
+return "WhatsApp";
 
-  if (text === "spotify")
-    return "Spotify";
+if (text === "spotify")
+return "Spotify";
 
-  if (text === "linkedin")
-    return "LinkedIn";
+if (text === "linkedin")
+return "LinkedIn";
 
-  if (text === "discord")
-    return "Discord";
+if (text === "discord")
+return "Discord";
 
-  if (
-    text === "site web" ||
-    text === "website" ||
-    text === "web"
-  )
-    return "Site Web";
+if (
+text === "site web" ||
+text === "website" ||
+text === "web"
+)
+return "Site Web";
 
-  return value;
+return value;
 }
 
+/*
+
+CONVERTIR ACTIVE EN BOOLEAN
+
+*/
+
+function isActive(value) {
+
+if (value === true)
+return true;
+
+if (value === false)
+return false;
+
+if (value === 1)
+return true;
+
+if (value === 0)
+return false;
+
+if (
+typeof value === "string"
+) {
+
+const text =
+  value.trim().toLowerCase();
+
+return (
+  text === "true" ||
+  text === "1" ||
+  text === "yes"
+);
+
+}
+
+return false;
+}
 
 /*
-========================================
+
+FORMATER SERVICE
+
+*/
+
+function formatService(service) {
+
+return {
+
+id:
+  service.id,
+
+platform:
+  normalizePlatform(
+    service.platform
+  ),
+
+name:
+  service.name,
+
+description:
+  service.description || "",
+
+price:
+  Number(
+    service.price || 0
+  ),
+
+min_quantity:
+  Number(
+    service.min_quantity || 1
+  ),
+
+max_quantity:
+  Number(
+    service.max_quantity || 1000000
+  )
+
+};
+
+}
+
+/*
+
 TOUS LES SERVICES
-========================================
+
 */
 
 router.get(
-  "/",
-  authenticateToken,
-  async (req, res) => {
+"/",
+authenticateToken,
+async (req, res) => {
 
-    try {
+try {
 
-      const requestedPlatform =
-        String(
-          req.query.platform || ""
-        ).trim();
-
-
-      let sql = `
-        SELECT
-          id,
-          platform,
-          name,
-          description,
-          price,
-          min_quantity,
-          max_quantity
-        FROM services
-        WHERE active = 1
-      `;
+  const requestedPlatform =
+    String(
+      req.query.platform || ""
+    ).trim();
 
 
-      const params = [];
+  let sql = `
+    SELECT
+      id,
+      platform,
+      name,
+      description,
+      price,
+      min_quantity,
+      max_quantity,
+      active
+    FROM services
+    WHERE active = TRUE
+  `;
 
 
-      /*
-      ========================================
-      FILTRE PLATEFORME
-      ========================================
-      */
-
-      if (requestedPlatform) {
-
-        const platform =
-          normalizePlatform(
-            requestedPlatform
-          );
+  const params = [];
 
 
-        /*
-        ----------------------------------------
-        X accepte aussi Twitter
-        ----------------------------------------
-        */
+  /*
+  ========================================
+  FILTRE PLATEFORME
+  ========================================
+  */
 
-        if (platform === "X") {
+  if (requestedPlatform) {
 
-          sql += `
-            AND (
-              LOWER(platform) = LOWER($1)
-              OR LOWER(platform) = 'twitter'
-            )
-          `;
-
-          params.push("X");
-
-        } else {
-
-          sql += `
-            AND LOWER(platform) = LOWER($1)
-          `;
-
-          params.push(platform);
-
-        }
-
-      }
+    const platform =
+      normalizePlatform(
+        requestedPlatform
+      );
 
 
-      /*
-      ========================================
-      ORDRE
-      ========================================
-      */
+    /*
+    ----------------------------------------
+    X accepte aussi Twitter
+    ----------------------------------------
+    */
+
+    if (platform === "X") {
 
       sql += `
-        ORDER BY
-          platform ASC,
-          id ASC
+        AND (
+          LOWER(platform) = LOWER($1)
+          OR LOWER(platform) = 'twitter'
+        )
       `;
 
+      params.push("X");
 
-      /*
-      ========================================
-      REQUÊTE POSTGRESQL
-      ========================================
-      */
+    } else {
 
-      const result =
-        await db.query(
-          sql,
-          params
-        );
+      sql += `
+        AND LOWER(platform) = LOWER($1)
+      `;
 
-
-      /*
-      ========================================
-      NORMALISER LES SERVICES
-      ========================================
-      */
-
-      const formattedServices =
-        (result.rows || []).map(
-          service => ({
-
-            id:
-              service.id,
-
-            platform:
-              normalizePlatform(
-                service.platform
-              ),
-
-            name:
-              service.name,
-
-            description:
-              service.description || "",
-
-            price:
-              Number(
-                service.price || 0
-              ),
-
-            min_quantity:
-              Number(
-                service.min_quantity || 1
-              ),
-
-            max_quantity:
-              Number(
-                service.max_quantity ||
-                1000000
-              )
-
-          })
-        );
-
-
-      console.log(
-        `📦 Services envoyés : ${formattedServices.length}` +
-        (
-          requestedPlatform
-            ? ` | Plateforme : ${requestedPlatform}`
-            : ""
-        )
-      );
-
-
-      /*
-      ========================================
-      RÉPONSE
-      ========================================
-      */
-
-      return res.json({
-
-        success: true,
-
-        count:
-          formattedServices.length,
-
-        services:
-          formattedServices
-
-      });
-
-
-    } catch (error) {
-
-      console.error(
-        "❌ Erreur récupération services PostgreSQL:",
-        error
-      );
-
-
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          "Impossible de récupérer les services."
-
-      });
+      params.push(platform);
 
     }
 
   }
+
+
+  /*
+  ========================================
+  ORDRE
+  ========================================
+  */
+
+  sql += `
+    ORDER BY
+      platform ASC,
+      id ASC
+  `;
+
+
+  /*
+  ========================================
+  REQUÊTE POSTGRESQL
+  ========================================
+  */
+
+  const result =
+    await db.query(
+      sql,
+      params
+    );
+
+
+  /*
+  ========================================
+  NORMALISER SERVICES
+  ========================================
+  */
+
+  const formattedServices =
+    (result.rows || []).map(
+      formatService
+    );
+
+
+  console.log(
+    `📦 Services envoyés : ${formattedServices.length}` +
+    (
+      requestedPlatform
+        ? ` | Plateforme : ${requestedPlatform}`
+        : ""
+    )
+  );
+
+
+  /*
+  ========================================
+  RÉPONSE
+  ========================================
+  */
+
+  return res.json({
+
+    success: true,
+
+    count:
+      formattedServices.length,
+
+    services:
+      formattedServices
+
+  });
+
+
+} catch (error) {
+
+  console.error(
+    "❌ Erreur récupération services PostgreSQL:",
+    error
+  );
+
+
+  return res.status(500).json({
+
+    success: false,
+
+    message:
+      "Impossible de récupérer les services."
+
+  });
+
+}
+
+}
 );
 
-
 /*
-========================================
+
 SERVICE PAR ID
-========================================
+
 */
 
 router.get(
-  "/:id",
-  authenticateToken,
-  async (req, res) => {
+"/:id",
+authenticateToken,
+async (req, res) => {
 
-    try {
+try {
 
-      const serviceId =
-        Number(
-          req.params.id
-        );
-
-
-      /*
-      ==============================
-      VALIDATION ID
-      ==============================
-      */
-
-      if (
-        !Number.isInteger(serviceId) ||
-        serviceId <= 0
-      ) {
-
-        return res.status(400).json({
-
-          success: false,
-
-          message:
-            "ID de service invalide."
-
-        });
-
-      }
+  const serviceId =
+    Number(
+      req.params.id
+    );
 
 
-      /*
-      ==============================
-      REQUÊTE POSTGRESQL
-      ==============================
-      */
+  /*
+  ==============================
+  VALIDATION ID
+  ==============================
+  */
 
-      const result =
-        await db.query(
-          `
-          SELECT
-            id,
-            platform,
-            name,
-            description,
-            price,
-            min_quantity,
-            max_quantity
-          FROM services
-          WHERE id = $1
-            AND active = 1
-          `,
-          [
-            serviceId
-          ]
-        );
+  if (
+    !Number.isInteger(serviceId) ||
+    serviceId <= 0
+  ) {
 
+    return res.status(400).json({
 
-      /*
-      ==============================
-      SERVICE INTROUVABLE
-      ==============================
-      */
+      success: false,
 
-      if (
-        result.rows.length === 0
-      ) {
+      message:
+        "ID de service invalide."
 
-        return res.status(404).json({
-
-          success: false,
-
-          message:
-            "Service introuvable."
-
-        });
-
-      }
-
-
-      const service =
-        result.rows[0];
-
-
-      /*
-      ==============================
-      RÉPONSE
-      ==============================
-      */
-
-      return res.json({
-
-        success: true,
-
-        service: {
-
-          id:
-            service.id,
-
-          platform:
-            normalizePlatform(
-              service.platform
-            ),
-
-          name:
-            service.name,
-
-          description:
-            service.description || "",
-
-          price:
-            Number(
-              service.price || 0
-            ),
-
-          min_quantity:
-            Number(
-              service.min_quantity || 1
-            ),
-
-          max_quantity:
-            Number(
-              service.max_quantity ||
-              1000000
-            )
-
-        }
-
-      });
-
-
-    } catch (error) {
-
-      console.error(
-        "❌ Erreur service PostgreSQL:",
-        error
-      );
-
-
-      return res.status(500).json({
-
-        success: false,
-
-        message:
-          "Impossible de récupérer le service."
-
-      });
-
-    }
+    });
 
   }
+
+
+  /*
+  ==============================
+  REQUÊTE POSTGRESQL
+  ==============================
+  */
+
+  const result =
+    await db.query(
+      `
+      SELECT
+        id,
+        platform,
+        name,
+        description,
+        price,
+        min_quantity,
+        max_quantity,
+        active
+      FROM services
+      WHERE id = $1
+        AND active = TRUE
+      `,
+      [
+        serviceId
+      ]
+    );
+
+
+  /*
+  ==============================
+  SERVICE INTROUVABLE
+  ==============================
+  */
+
+  if (
+    result.rows.length === 0
+  ) {
+
+    return res.status(404).json({
+
+      success: false,
+
+      message:
+        "Service introuvable ou désactivé."
+
+    });
+
+  }
+
+
+  const service =
+    result.rows[0];
+
+
+  /*
+  ==============================
+  RÉPONSE
+  ==============================
+  */
+
+  return res.json({
+
+    success: true,
+
+    service:
+      formatService(service)
+
+  });
+
+
+} catch (error) {
+
+  console.error(
+    "❌ Erreur service PostgreSQL:",
+    error
+  );
+
+
+  return res.status(500).json({
+
+    success: false,
+
+    message:
+      "Impossible de récupérer le service."
+
+  });
+
+}
+
+}
 );
 
-
 /*
-========================================
+
 EXPORT
-========================================
+
 */
 
 module.exports = router;
