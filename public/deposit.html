@@ -53,11 +53,6 @@
       margin-bottom: 25px;
     }
 
-    .payment-box h2,
-    .history-box h2 {
-      margin-top: 0;
-    }
-
     .payment-info {
       background: #f5f7fa;
       border-radius: 14px;
@@ -79,11 +74,6 @@
       padding: 15px 10px;
       cursor: pointer;
       font-weight: 700;
-      transition: .2s;
-    }
-
-    .amount-btn:hover {
-      transform: translateY(-2px);
     }
 
     .amount-btn.active {
@@ -96,7 +86,6 @@
       display: block;
       margin-top: 5px;
       opacity: .7;
-      font-weight: 500;
     }
 
     .selected-amount {
@@ -147,10 +136,6 @@
       margin-top: 25px;
     }
 
-    .manual-box h3 {
-      margin-top: 0;
-    }
-
     .deposit-item {
       display: flex;
       justify-content: space-between;
@@ -158,10 +143,6 @@
       gap: 15px;
       padding: 15px 0;
       border-bottom: 1px solid #eee;
-    }
-
-    .deposit-item:last-child {
-      border-bottom: none;
     }
 
     .deposit-amount {
@@ -204,6 +185,7 @@
 <body>
 
 <header class="navbar">
+
   <div class="container nav-content">
 
     <a href="/dashboard.html" class="logo">
@@ -217,17 +199,24 @@
     </nav>
 
     <div class="nav-actions">
+
       <span id="userName" class="user-name">
         Chargement...
       </span>
 
-      <button id="logoutButton" type="button" class="btn btn-outline">
+      <button
+        id="logoutButton"
+        type="button"
+        class="btn btn-outline">
         Déconnexion
       </button>
+
     </div>
 
   </div>
+
 </header>
+
 
 <main>
 
@@ -251,6 +240,7 @@
 
   </div>
 
+
   <div class="balance-card">
 
     <span>
@@ -263,6 +253,7 @@
 
   </div>
 
+
   <div class="payment-box">
 
     <h2>
@@ -273,85 +264,151 @@
       Sélectionnez le montant que vous souhaitez ajouter à votre solde.
     </p>
 
+
     <div class="payment-info">
 
       <strong>
-        ⚡ Paiement automatique activé
+        💳 Paiement sécurisé
       </strong>
 
       <p>
-        Après confirmation du paiement,
-        votre recharge peut être créditée automatiquement.
+        Pour 1 000 CDF, le paiement est traité manuellement.
+        Les montants à partir de 2 500 CDF peuvent utiliser le paiement
+        automatique disponible.
       </p>
 
     </div>
 
+
     <div class="amount-grid">
 
-      <button class="amount-btn"
+      <button
+        class="amount-btn active"
         data-amount="1000"
         data-usd="0.40">
+
         1 000 CDF
-        <small>≈ $0.40</small>
+
+        <small>
+          ≈ $0.40
+        </small>
+
       </button>
 
-      <button class="amount-btn"
+
+      <button
+        class="amount-btn"
         data-amount="2500"
         data-usd="1.00">
+
         2 500 CDF
-        <small>≈ $1</small>
+
+        <small>
+          ≈ $1
+        </small>
+
       </button>
 
-      <button class="amount-btn"
+
+      <button
+        class="amount-btn"
         data-amount="5000"
         data-usd="2.00">
+
         5 000 CDF
-        <small>≈ $2</small>
+
+        <small>
+          ≈ $2
+        </small>
+
       </button>
 
-      <button class="amount-btn"
+
+      <button
+        class="amount-btn"
         data-amount="10000"
         data-usd="4.00">
+
         10 000 CDF
-        <small>≈ $4</small>
+
+        <small>
+          ≈ $4
+        </small>
+
       </button>
 
-      <button class="amount-btn"
+
+      <button
+        class="amount-btn"
         data-amount="25000"
         data-usd="10.00">
+
         25 000 CDF
-        <small>≈ $10</small>
+
+        <small>
+          ≈ $10
+        </small>
+
       </button>
 
-      <button class="amount-btn"
+
+      <button
+        class="amount-btn"
         data-amount="50000"
         data-usd="20.00">
+
         50 000 CDF
-        <small>≈ $20</small>
+
+        <small>
+          ≈ $20
+        </small>
+
       </button>
 
-      <button class="amount-btn"
+
+      <button
+        class="amount-btn"
         data-amount="100000"
         data-usd="40.00">
+
         100 000 CDF
-        <small>≈ $40</small>
+
+        <small>
+          ≈ $40
+        </small>
+
       </button>
 
-      <button class="amount-btn"
+
+      <button
+        class="amount-btn"
         data-amount="250000"
         data-usd="100.00">
+
         250 000 CDF
-        <small>≈ $100</small>
+
+        <small>
+          ≈ $100
+        </small>
+
       </button>
 
-      <button class="amount-btn"
+
+      <button
+        class="amount-btn"
         data-amount="500000"
         data-usd="200.00">
+
         500 000 CDF
-        <small>≈ $200</small>
+
+        <small>
+          ≈ $200
+        </small>
+
       </button>
 
     </div>
+
 
     <div class="selected-amount">
 
@@ -364,13 +421,14 @@
       </strong>
 
       <p>
-        Sera facturé :
+        Montant :
         <strong id="selectedUsd">
           $0.40 USD
         </strong>
       </p>
 
     </div>
+
 
     <div class="payment-buttons">
 
@@ -379,22 +437,24 @@
         href="#"
         target="_blank"
         class="btn-payment">
-        💳 Payer 1 000 CDF
+
+        💳 Payer
+
       </a>
+
 
       <a
         id="whatsappButton"
         href="#"
         target="_blank"
         class="btn-whatsapp">
+
         💬 Payer via WhatsApp
+
       </a>
 
     </div>
 
-    <p style="margin-top:15px;">
-      ⚡ Le paiement automatique sera traité après confirmation du paiement.
-    </p>
 
     <div class="manual-box">
 
@@ -403,8 +463,8 @@
       </h3>
 
       <p>
-        Pour un autre montant ou si vous préférez un paiement manuel,
-        contactez-nous directement sur WhatsApp.
+        Pour un dépôt de 1 000 CDF ou pour tout problème de paiement,
+        contactez-nous sur WhatsApp et envoyez la référence de votre paiement.
       </p>
 
       <a
@@ -412,12 +472,15 @@
         href="#"
         target="_blank"
         class="btn-whatsapp">
+
         💬 Contacter WhatsApp
+
       </a>
 
     </div>
 
   </div>
+
 
   <div class="history-box">
 
@@ -451,7 +514,9 @@
 
 </main>
 
+
 <script src="/js/deposit.js"></script>
 
 </body>
-</html>
+
+        </html>
