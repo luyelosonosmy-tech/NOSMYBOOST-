@@ -107,3 +107,36 @@
   background: #25D366;
   color: white;
 }
+
+body {
+  background: #ffffff !important;
+}
+
+.navbar {
+  background: #ffffff !important;
+}
+
+.btn-primary {
+  background: #16a34a !important;
+  color: #ffffff !important;
+}
+
+.hero {
+  background: #ffffff !important;
+}
+
+.cta {
+  background: #16a34a !important;
+}
+
+footer {
+  background: #15803d !important;
+}
+
+.section-title > span {
+  color: #16a34a !important;
+}
+
+.logo {
+  color: #16a34a !important;
+}
