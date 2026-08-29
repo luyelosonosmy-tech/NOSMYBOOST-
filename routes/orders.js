@@ -6,16 +6,14 @@ const authenticateToken = require("../middleware/auth");
 
 const router = express.Router();
 
-
 /*
 ========================================
 NOSMYBOOST 🇧🇪
 COMMANDES CLIENT + SMM AFRICA
 POSTGRESQL
-VERSION SÉCURISÉE
+VERSION COMPLÈTE ET SÉCURISÉE
 ========================================
 */
-
 
 const SMM_API_URL =
   String(
@@ -23,12 +21,10 @@ const SMM_API_URL =
     "https://smm.africa/api/v3"
   ).trim();
 
-
 const SMM_API_KEY =
   String(
     process.env.SMM_API_KEY || ""
   ).trim();
-
 
 /*
 ========================================
@@ -38,28 +34,23 @@ PROTECTION DOUBLE COMMANDE
 
 const ordersInProgress = new Set();
 
-
 /*
 ========================================
-OUTILS DATABASE
+DATABASE GET
 ========================================
 */
 
 async function dbGet(sql, params = []) {
 
   const result =
-    await db.query(
-      sql,
-      params
-    );
+    await db.query(sql, params);
 
   return result.rows[0] || null;
 }
 
-
 /*
 ========================================
-APPEL API SMM AFRICA
+SMM AFRICA
 ========================================
 */
 
@@ -72,7 +63,6 @@ async function smmAfricaRequest(payload) {
     );
 
   }
-
 
   const response =
     await fetch(
@@ -93,12 +83,10 @@ async function smmAfricaRequest(payload) {
       }
     );
 
-
   const data =
     await response
       .json()
       .catch(() => ({}));
-
 
   if (!response.ok) {
 
@@ -110,7 +98,6 @@ async function smmAfricaRequest(payload) {
 
   }
 
-
   if (data.error) {
 
     throw new Error(
@@ -119,11 +106,8 @@ async function smmAfricaRequest(payload) {
 
   }
 
-
   return data;
-
 }
-
 
 /*
 ========================================
@@ -140,17 +124,80 @@ async function refundOrder(
   const client =
     await db.connect();
 
-
   try {
 
-    await client.query(
-      "BEGIN"
-    );
-
+    await client.query("BEGIN");
 
     /*
     ==============================
-    CRÉDITER LE SOLDE
+    VERROUILLER LA COMMANDE
+    ==============================
+    */
+
+    const orderResult =
+      await client.query(
+        `
+        SELECT
+          id,
+          user_id,
+          price,
+          status
+        FROM orders
+        WHERE id = $1
+          AND user_id = $2
+        FOR UPDATE
+        `,
+        [
+          orderId,
+          userId
+        ]
+      );
+
+    const order =
+      orderResult.rows[0];
+
+    if (!order) {
+
+      throw new Error(
+        "Commande introuvable pendant le remboursement."
+      );
+
+    }
+
+    /*
+    ==============================
+    NE PAS REMBOURSER DEUX FOIS
+    ==============================
+    */
+
+    if (
+      order.status === "failed"
+    ) {
+
+      await client.query(
+        "ROLLBACK"
+      );
+
+      return false;
+    }
+
+    const refundAmount =
+      Number(amount);
+
+    if (
+      !Number.isFinite(refundAmount) ||
+      refundAmount <= 0
+    ) {
+
+      throw new Error(
+        "Montant de remboursement invalide."
+      );
+
+    }
+
+    /*
+    ==============================
+    RECRÉDITER LE CLIENT
     ==============================
     */
 
@@ -158,27 +205,24 @@ async function refundOrder(
       await client.query(
         `
         UPDATE users
+
         SET
           balance =
             balance + $1,
 
           total_spent =
-            CASE
-              WHEN total_spent >= $2
-              THEN total_spent - $3
-              ELSE 0
-            END
+            GREATEST(
+              total_spent - $1,
+              0
+            )
 
-        WHERE id = $4
+        WHERE id = $2
         `,
         [
-          amount,
-          amount,
-          amount,
+          refundAmount,
           userId
         ]
       );
-
 
     if (
       userUpdate.rowCount !== 1
@@ -190,10 +234,9 @@ async function refundOrder(
 
     }
 
-
     /*
     ==============================
-    MARQUER COMMANDE FAILED
+    COMMANDÉE → FAILED
     ==============================
     */
 
@@ -201,11 +244,13 @@ async function refundOrder(
       await client.query(
         `
         UPDATE orders
+
         SET
           status = 'failed'
 
         WHERE id = $1
           AND user_id = $2
+          AND status <> 'failed'
         `,
         [
           orderId,
@@ -213,22 +258,25 @@ async function refundOrder(
         ]
       );
 
-
     if (
       orderUpdate.rowCount !== 1
     ) {
 
       throw new Error(
-        "Commande introuvable pendant le remboursement."
+        "Impossible de marquer la commande comme échouée."
       );
 
     }
-
 
     await client.query(
       "COMMIT"
     );
 
+    console.log(
+      `✅ REMBOURSEMENT ${refundAmount} CDF | user=${userId} | order=${orderId}`
+    );
+
+    return true;
 
   } catch (error) {
 
@@ -236,18 +284,14 @@ async function refundOrder(
       "ROLLBACK"
     ).catch(() => {});
 
-
     throw error;
-
 
   } finally {
 
     client.release();
 
   }
-
 }
-
 
 /*
 ========================================
@@ -261,13 +305,9 @@ router.post(
   async (req, res) => {
 
     let localOrderId = null;
-
     let reservedAmount = 0;
-
     let providerAccepted = false;
-
     let userId = null;
-
 
     try {
 
@@ -278,26 +318,22 @@ router.post(
       */
 
       userId =
-        Number(req.user.id);
-
+        Number(req.user?.id);
 
       const serviceId =
         Number(req.body.serviceId);
-
 
       const link =
         String(
           req.body.link || ""
         ).trim();
 
-
       const quantity =
         Number(req.body.quantity);
 
-
       /*
       ==============================
-      UTILISATEUR
+      SESSION
       ==============================
       */
 
@@ -317,10 +353,9 @@ router.post(
 
       }
 
-
       /*
       ==============================
-      DOUBLE CLIC
+      DOUBLE COMMANDE
       ==============================
       */
 
@@ -339,15 +374,13 @@ router.post(
 
       }
 
-
       ordersInProgress.add(
         userId
       );
 
-
       /*
       ==============================
-      SERVICE
+      VALIDATION SERVICE
       ==============================
       */
 
@@ -362,10 +395,9 @@ router.post(
 
       }
 
-
       /*
       ==============================
-      LIEN
+      VALIDATION LIEN
       ==============================
       */
 
@@ -377,10 +409,17 @@ router.post(
 
       }
 
+      if (link.length > 2000) {
+
+        throw new Error(
+          "Le lien est trop long."
+        );
+
+      }
 
       /*
       ==============================
-      QUANTITÉ
+      VALIDATION QUANTITÉ
       ==============================
       */
 
@@ -395,10 +434,9 @@ router.post(
 
       }
 
-
       /*
       ==============================
-      RÉCUPÉRER SERVICE
+      SERVICE
       ==============================
       */
 
@@ -427,7 +465,6 @@ router.post(
           ]
         );
 
-
       if (!service) {
 
         throw new Error(
@@ -436,16 +473,18 @@ router.post(
 
       }
 
-
       /*
       ==============================
       SERVICE ACTIF
       ==============================
       */
 
-      if (
-        service.active !== true
-      ) {
+      const active =
+        service.active === true ||
+        service.active === 1 ||
+        service.active === "1";
+
+      if (!active) {
 
         throw new Error(
           "Ce service est actuellement désactivé."
@@ -453,47 +492,27 @@ router.post(
 
       }
 
-
       /*
       ==============================
       PROVIDER SERVICE ID
       ==============================
       */
 
-      if (
-        service.provider_service_id === null ||
-        service.provider_service_id === undefined ||
-        String(
-          service.provider_service_id
-        ).trim() === ""
-      ) {
-
-        throw new Error(
-          `Le service "${service.name}" n'a pas encore de provider_service_id SMM Africa.`
-        );
-
-      }
-
-
       const providerServiceId =
         Number(
           service.provider_service_id
         );
 
-
       if (
-        !Number.isInteger(
-          providerServiceId
-        ) ||
+        !Number.isInteger(providerServiceId) ||
         providerServiceId <= 0
       ) {
 
         throw new Error(
-          "Le provider_service_id de ce service est invalide."
+          `Le service "${service.name}" n'a pas de provider_service_id valide.`
         );
 
       }
-
 
       /*
       ==============================
@@ -506,12 +525,10 @@ router.post(
           service.min_quantity || 1
         );
 
-
       const max =
         Number(
           service.max_quantity || 1000000
         );
-
 
       if (
         !Number.isInteger(min) ||
@@ -521,11 +538,10 @@ router.post(
       ) {
 
         throw new Error(
-          "Les limites de quantité du service sont invalides."
+          "Les limites du service sont invalides."
         );
 
       }
-
 
       if (
         quantity < min
@@ -537,7 +553,6 @@ router.post(
 
       }
 
-
       if (
         quantity > max
       ) {
@@ -548,10 +563,9 @@ router.post(
 
       }
 
-
       /*
       ==============================
-      PRIX
+      PRIX CLIENT
       ==============================
       */
 
@@ -559,7 +573,6 @@ router.post(
         Number(
           service.price
         );
-
 
       if (
         !Number.isFinite(servicePrice) ||
@@ -572,7 +585,6 @@ router.post(
 
       }
 
-
       const totalPrice =
         Number(
           (
@@ -581,7 +593,6 @@ router.post(
             servicePrice
           ).toFixed(2)
         );
-
 
       if (
         !Number.isFinite(totalPrice) ||
@@ -594,14 +605,12 @@ router.post(
 
       }
 
-
       reservedAmount =
         totalPrice;
 
-
       /*
       ==============================
-      CLIENT
+      UTILISATEUR
       ==============================
       */
 
@@ -624,7 +633,6 @@ router.post(
           ]
         );
 
-
       if (!user) {
 
         throw new Error(
@@ -633,16 +641,14 @@ router.post(
 
       }
 
-
       const balance =
         Number(
           user.balance || 0
         );
 
-
       /*
       ==============================
-      SOLDE
+      SOLDE INSUFFISANT
       ==============================
       */
 
@@ -666,23 +672,16 @@ router.post(
 
       }
 
-
       /*
       ==================================================
       ÉTAPE 1
-      RÉSERVER L'ARGENT
-      + CRÉER COMMANDE PENDING
+      DÉBIT + CRÉATION COMMANDE
+      TRANSACTION
       ==================================================
       */
 
-      console.log(
-        `NOSMYBOOST → réservation ${totalPrice} CDF | user=${userId}`
-      );
-
-
       const client =
         await db.connect();
-
 
       try {
 
@@ -690,10 +689,9 @@ router.post(
           "BEGIN"
         );
 
-
         /*
         ==============================
-        DÉBIT PROVISOIRE
+        DÉBIT ATOMIQUE
         ==============================
         */
 
@@ -707,30 +705,26 @@ router.post(
                 balance - $1,
 
               total_spent =
-                total_spent + $2
+                total_spent + $1
 
-            WHERE id = $3
-              AND balance >= $4
+            WHERE id = $2
+              AND balance >= $1
             `,
             [
               totalPrice,
-              totalPrice,
-              userId,
-              totalPrice
+              userId
             ]
           );
-
 
         if (
           debit.rowCount !== 1
         ) {
 
           throw new Error(
-            "Impossible de réserver le solde du client."
+            "Le solde du client a changé. Veuillez réessayer."
           );
 
         }
-
 
         /*
         ==============================
@@ -749,6 +743,7 @@ router.post(
               quantity,
               price,
               status,
+              provider_service_id,
               provider_order_id
             )
 
@@ -760,20 +755,25 @@ router.post(
               $4,
               $5,
               'pending',
+              $6,
               NULL
             )
 
-            RETURNING id
+            RETURNING
+              id,
+              created_at
             `,
             [
               userId,
               serviceId,
               link,
               quantity,
-              totalPrice
+              totalPrice,
+              String(
+                providerServiceId
+              )
             ]
           );
-
 
         if (
           inserted.rows.length !== 1
@@ -785,21 +785,12 @@ router.post(
 
         }
 
-
         localOrderId =
           inserted.rows[0].id;
-
-
-        /*
-        ==============================
-        COMMIT
-        ==============================
-        */
 
         await client.query(
           "COMMIT"
         );
-
 
       } catch (transactionError) {
 
@@ -807,16 +798,13 @@ router.post(
           "ROLLBACK"
         ).catch(() => {});
 
-
         throw transactionError;
-
 
       } finally {
 
         client.release();
 
       }
-
 
       /*
       ==================================================
@@ -846,16 +834,14 @@ router.post(
       );
 
       console.log(
-        `Montant : ${totalPrice} CDF`
+        `Prix client : ${totalPrice} CDF`
       );
 
       console.log(
         "========================================"
       );
 
-
       let providerResponse;
-
 
       try {
 
@@ -874,21 +860,18 @@ router.post(
 
           });
 
-
       } catch (providerError) {
 
-        /*
-        ==================================================
-        FOURNISSEUR REFUSE
-        → REMBOURSEMENT AUTOMATIQUE
-        ==================================================
-        */
-
         console.error(
-          "❌ SMM Africa a refusé la commande:",
+          "❌ SMM Africa a refusé :",
           providerError.message
         );
 
+        /*
+        ==============================
+        REMBOURSEMENT AUTOMATIQUE
+        ==============================
+        */
 
         try {
 
@@ -898,7 +881,6 @@ router.post(
             reservedAmount
           );
 
-
         } catch (refundError) {
 
           console.error(
@@ -906,13 +888,12 @@ router.post(
             refundError
           );
 
-
           return res.status(500).json({
 
             success: false,
 
             message:
-              "La commande fournisseur a échoué. Le remboursement automatique nécessite une vérification administrateur.",
+              "La commande a échoué et le remboursement automatique nécessite une vérification administrateur.",
 
             order: {
 
@@ -928,13 +909,12 @@ router.post(
 
         }
 
-
         return res.status(502).json({
 
           success: false,
 
           message:
-            "SMM Africa a refusé la commande. Votre montant a été recrédité.",
+            "SMM Africa a refusé la commande. Votre argent a été recrédité.",
 
           order: {
 
@@ -950,7 +930,6 @@ router.post(
 
       }
 
-
       /*
       ==================================================
       ÉTAPE 3
@@ -961,7 +940,6 @@ router.post(
       const providerOrderId =
         providerResponse?.order;
 
-
       if (
         providerOrderId === undefined ||
         providerOrderId === null ||
@@ -971,10 +949,9 @@ router.post(
       ) {
 
         console.error(
-          "❌ Réponse SMM Africa invalide:",
+          "❌ Réponse SMM Africa sans order ID:",
           providerResponse
         );
-
 
         /*
         ==============================
@@ -990,21 +967,19 @@ router.post(
             reservedAmount
           );
 
-
         } catch (refundError) {
 
           console.error(
-            "❌ Erreur remboursement:",
+            "❌ ERREUR REMBOURSEMENT:",
             refundError
           );
-
 
           return res.status(500).json({
 
             success: false,
 
             message:
-              "Le fournisseur n'a pas confirmé la commande et le remboursement nécessite une vérification administrateur.",
+              "Le fournisseur n'a pas confirmé la commande. Le remboursement nécessite une vérification administrateur.",
 
             order: {
 
@@ -1020,13 +995,12 @@ router.post(
 
         }
 
-
         return res.status(502).json({
 
           success: false,
 
           message:
-            "Le fournisseur n'a pas confirmé la commande. Votre montant a été recrédité.",
+            "Le fournisseur n'a pas confirmé la commande. Votre argent a été recrédité.",
 
           order: {
 
@@ -1042,10 +1016,14 @@ router.post(
 
       }
 
+      /*
+      ==============================
+      FOURNISSEUR ACCEPTÉ
+      ==============================
+      */
 
       providerAccepted =
         true;
-
 
       /*
       ==================================================
@@ -1078,12 +1056,11 @@ router.post(
           ]
         );
 
-
       /*
-      ==================================================
+      ==============================
       FOURNISSEUR ACCEPTÉ
-      MAIS UPDATE LOCAL ÉCHOUÉ
-      ==================================================
+      MAIS DB NON MISE À JOUR
+      ==============================
       */
 
       if (
@@ -1091,7 +1068,7 @@ router.post(
       ) {
 
         console.error(
-          "⚠️ FOURNISSEUR ACCEPTÉ MAIS MISE À JOUR LOCALE ÉCHOUÉE"
+          "⚠️ FOURNISSEUR ACCEPTÉ MAIS DB NON MISE À JOUR"
         );
 
         console.error(
@@ -1099,9 +1076,14 @@ router.post(
         );
 
         console.error(
-          `Commande SMM Africa : #${providerOrderId}`
+          `Commande fournisseur : #${providerOrderId}`
         );
 
+        /*
+        IMPORTANT :
+        NE PAS REMBOURSER.
+        Le fournisseur a déjà accepté.
+        */
 
         return res.status(202).json({
 
@@ -1129,7 +1111,7 @@ router.post(
               totalPrice,
 
             status:
-              "pending"
+              "processing"
 
           }
 
@@ -1137,10 +1119,9 @@ router.post(
 
       }
 
-
       /*
       ==================================================
-      SUCCÈS FINAL
+      SUCCÈS
       ==================================================
       */
 
@@ -1149,7 +1130,7 @@ router.post(
       );
 
       console.log(
-        `✅ NOSMYBOOST COMMANDE #${localOrderId}`
+        `✅ COMMANDE NOSMYBOOST #${localOrderId}`
       );
 
       console.log(
@@ -1157,13 +1138,12 @@ router.post(
       );
 
       console.log(
-        `✅ Montant : ${totalPrice} CDF`
+        `✅ Client payé : ${totalPrice} CDF`
       );
 
       console.log(
         "========================================"
       );
-
 
       return res.status(201).json({
 
@@ -1197,7 +1177,6 @@ router.post(
 
       });
 
-
     } catch (error) {
 
       console.error(
@@ -1216,11 +1195,10 @@ router.post(
         "========================================"
       );
 
-
       /*
       ==================================================
-      FOURNISSEUR DÉJÀ ACCEPTÉ
-      → NE PAS REMBOURSER
+      SI FOURNISSEUR ACCEPTÉ
+      NE JAMAIS REMBOURSER AUTOMATIQUEMENT
       ==================================================
       */
 
@@ -1242,7 +1220,7 @@ router.post(
               localOrderId,
 
             status:
-              "pending"
+              "processing"
 
           }
 
@@ -1250,11 +1228,242 @@ router.post(
 
       }
 
-
       /*
       ==================================================
-      COMMANDE LOCALE NON CRÉÉE
+      ERREUR APRÈS DÉBIT MAIS AVANT ACCEPTATION
       ==================================================
       */
 
-      if (!localO
+      if (
+        localOrderId &&
+        userId &&
+        reservedAmount > 0
+      ) {
+
+        try {
+
+          await refundOrder(
+            userId,
+            localOrderId,
+            reservedAmount
+          );
+
+          return res.status(500).json({
+
+            success: false,
+
+            message:
+              "La commande a échoué. Votre argent a été recrédité.",
+
+            order: {
+
+              id:
+                localOrderId,
+
+              status:
+                "failed"
+
+            }
+
+          });
+
+        } catch (refundError) {
+
+          console.error(
+            "❌ REMBOURSEMENT IMPOSSIBLE:",
+            refundError
+          );
+
+          return res.status(500).json({
+
+            success: false,
+
+            message:
+              "La commande a échoué. Le remboursement nécessite une vérification administrateur.",
+
+            order: {
+
+              id:
+                localOrderId,
+
+              status:
+                "failed"
+
+            }
+
+          });
+
+        }
+
+      }
+
+      /*
+      ==================================================
+      ERREUR AVANT CRÉATION
+      ==================================================
+      */
+
+      return res.status(400).json({
+
+        success: false,
+
+        message:
+          error.message ||
+          "Impossible de créer la commande."
+
+      });
+
+    } finally {
+
+      /*
+      ==============================
+      LIBÉRER LE VERROU
+      ==============================
+      */
+
+      if (userId) {
+
+        ordersInProgress.delete(
+          userId
+        );
+
+      }
+
+    }
+
+  }
+);
+
+/*
+========================================
+MES COMMANDES
+========================================
+*/
+
+router.get(
+  "/my",
+  authenticateToken,
+  async (req, res) => {
+
+    try {
+
+      const userId =
+        Number(req.user?.id);
+
+      if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+      ) {
+
+        return res.status(401).json({
+
+          success: false,
+
+          message:
+            "Session utilisateur invalide."
+
+        });
+
+      }
+
+      const result =
+        await db.query(
+          `
+          SELECT
+            orders.id,
+            orders.service_id,
+            orders.link,
+            orders.quantity,
+            orders.price,
+            orders.status,
+            orders.provider_order_id,
+            orders.created_at,
+
+            services.name AS service_name,
+            services.platform
+
+          FROM orders
+
+          LEFT JOIN services
+            ON services.id = orders.service_id
+
+          WHERE orders.user_id = $1
+
+          ORDER BY orders.id DESC
+          `,
+          [
+            userId
+          ]
+        );
+
+      const orders =
+        result.rows.map(
+          order => ({
+
+            id:
+              order.id,
+
+            service_id:
+              order.service_id,
+
+            service_name:
+              order.service_name,
+
+            platform:
+              order.platform,
+
+            link:
+              order.link,
+
+            quantity:
+              Number(
+                order.quantity || 0
+              ),
+
+            price:
+              Number(
+                order.price || 0
+              ),
+
+            status:
+              order.status,
+
+            provider_order_id:
+              order.provider_order_id,
+
+            created_at:
+              order.created_at
+
+          })
+        );
+
+      return res.json({
+
+        success: true,
+
+        orders
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "❌ Erreur mes commandes:",
+        error
+      );
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          "Impossible de récupérer vos commandes."
+
+      });
+
+    }
+
+  }
+);
+
+module.exports = router;
