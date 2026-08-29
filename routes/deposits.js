@@ -31,7 +31,6 @@ CRÉER UNE DEMANDE DE DÉPÔT
 router.post("/", authenticateToken, async (req, res) => {
   try {
     const userId = Number(req.user.id);
-
     const amount = Number(req.body.amount);
 
     const method = String(req.body.method || "")
@@ -144,6 +143,7 @@ router.post("/", authenticateToken, async (req, res) => {
       )
       RETURNING
         id,
+        user_id,
         amount,
         method,
         proof,
@@ -163,15 +163,20 @@ router.post("/", authenticateToken, async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Demande de dépôt envoyée avec succès.",
-      depositId: deposit.id,
-      amount: Number(deposit.amount),
-      method: deposit.method,
-      status: deposit.status
+      deposit: {
+        id: deposit.id,
+        user_id: deposit.user_id,
+        amount: Number(deposit.amount),
+        method: deposit.method,
+        proof: deposit.proof,
+        status: deposit.status,
+        created_at: deposit.created_at
+      }
     });
 
   } catch (error) {
     console.error(
-      "Erreur dépôt PostgreSQL:",
+      "Erreur création dépôt PostgreSQL:",
       error
     );
 
