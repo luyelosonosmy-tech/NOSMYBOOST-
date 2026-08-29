@@ -1,3 +1,5 @@
+"use strict";
+
 /*
 ========================================
 NOSMYBOOST🇧🇪
@@ -45,29 +47,67 @@ const adminMessage =
 
 /*
 ========================================
+RESTAURATION SOLDE
+========================================
+*/
+
+const restoreBalanceForm =
+  document.getElementById(
+    "restoreBalanceForm"
+  );
+
+const restoreUserId =
+  document.getElementById(
+    "restoreUserId"
+  );
+
+const restoreAmount =
+  document.getElementById(
+    "restoreAmount"
+  );
+
+const restoreReason =
+  document.getElementById(
+    "restoreReason"
+  );
+
+const restoreBalanceButton =
+  document.getElementById(
+    "restoreBalanceButton"
+  );
+
+const restoreBalanceMessage =
+  document.getElementById(
+    "restoreBalanceMessage"
+  );
+
+
+/*
+========================================
 API
 ========================================
 */
 
 async function api(url, options = {}) {
 
-  const response = await fetch(url, {
+  const response =
+    await fetch(url, {
 
-    ...options,
+      ...options,
 
-    headers: {
+      headers: {
 
-      "Content-Type":
-        "application/json",
+        "Content-Type":
+          "application/json",
 
-      "Authorization":
-        `Bearer ${token}`,
+        "Authorization":
+          `Bearer ${token}`,
 
-      ...(options.headers || {})
+        ...(options.headers || {})
 
-    }
+      }
 
-  });
+    });
 
 
   const data =
@@ -118,6 +158,9 @@ CHARGER DÉPÔTS EN ATTENTE
 
 async function loadPendingDeposits() {
 
+  if (!pendingDeposits)
+    return;
+
   try {
 
     const data =
@@ -166,7 +209,9 @@ async function loadPendingDeposits() {
       deposit => {
 
         const card =
-          document.createElement("article");
+          document.createElement(
+            "article"
+          );
 
 
         card.className =
@@ -275,7 +320,10 @@ async function loadPendingDeposits() {
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "Admin deposits:",
+      error
+    );
 
 
     showMessage(
@@ -316,15 +364,17 @@ async function approveDeposit(
     );
 
 
-    await api(
-      `/api/admin/deposits/${depositId}/approve`,
-      {
-        method: "POST"
-      }
-    );
+    const data =
+      await api(
+        `/api/admin/deposits/${depositId}/approve`,
+        {
+          method: "POST"
+        }
+      );
 
 
     showMessage(
+      data.message ||
       "✅ Dépôt validé et compte client crédité.",
       "success"
     );
@@ -335,7 +385,10 @@ async function approveDeposit(
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "Approve deposit:",
+      error
+    );
 
 
     showMessage(
@@ -376,15 +429,17 @@ async function rejectDeposit(
     );
 
 
-    await api(
-      `/api/admin/deposits/${depositId}/reject`,
-      {
-        method: "POST"
-      }
-    );
+    const data =
+      await api(
+        `/api/admin/deposits/${depositId}/reject`,
+        {
+          method: "POST"
+        }
+      );
 
 
     showMessage(
+      data.message ||
       "❌ Dépôt refusé.",
       "success"
     );
@@ -395,13 +450,276 @@ async function rejectDeposit(
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "Reject deposit:",
+      error
+    );
 
 
     showMessage(
       error.message,
       "error"
     );
+
+  }
+
+}
+
+
+/*
+========================================
+RESTAURER LE SOLDE CLIENT
+========================================
+*/
+
+if (restoreBalanceForm) {
+
+  restoreBalanceForm.addEventListener(
+    "submit",
+    async function(event) {
+
+      event.preventDefault();
+
+
+      const userId =
+        Number(
+          restoreUserId?.value
+        );
+
+
+      const amount =
+        Number(
+          restoreAmount?.value
+        );
+
+
+      const reason =
+        String(
+          restoreReason?.value || ""
+        ).trim();
+
+
+      /*
+      ==============================
+      VALIDATION
+      ==============================
+      */
+
+      if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+      ) {
+
+        showRestoreMessage(
+          "❌ ID client invalide.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      if (
+        !Number.isInteger(amount) ||
+        amount <= 0
+      ) {
+
+        showRestoreMessage(
+          "❌ Montant invalide.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      if (!reason) {
+
+        showRestoreMessage(
+          "❌ Le motif est obligatoire.",
+          "error"
+        );
+
+        return;
+
+      }
+
+
+      /*
+      ==============================
+      CONFIRMATION
+      ==============================
+      */
+
+      const confirmed =
+        window.confirm(
+          `Restaurer ${formatMoney(amount)} CDF sur le compte du client #${userId} ?`
+        );
+
+
+      if (!confirmed)
+        return;
+
+
+      try {
+
+        if (restoreBalanceButton) {
+
+          restoreBalanceButton.disabled =
+            true;
+
+          restoreBalanceButton.textContent =
+            "⏳ Restauration en cours...";
+
+        }
+
+
+        showRestoreMessage(
+          "Restauration en cours...",
+          "info"
+        );
+
+
+        /*
+        ==============================
+        API BACKEND
+        ==============================
+        */
+
+        const data =
+          await api(
+            `/api/admin/users/${userId}/restore-balance`,
+            {
+              method: "POST",
+
+              body: JSON.stringify({
+
+                amount: amount,
+
+                reason: reason
+
+              })
+
+            }
+          );
+
+
+        /*
+        ==============================
+        SUCCÈS
+        ==============================
+        */
+
+        let message =
+          data.message ||
+          "✅ Solde restauré avec succès.";
+
+
+        if (
+          data.balance &&
+          Number.isFinite(
+            Number(
+              data.balance.current
+            )
+          )
+        ) {
+
+          message +=
+            ` Nouveau solde : ${formatMoney(
+              data.balance.current
+            )} CDF.`;
+
+        }
+
+
+        showRestoreMessage(
+          message,
+          "success"
+        );
+
+
+        /*
+        ==============================
+        VIDER FORMULAIRE
+        ==============================
+        */
+
+        restoreBalanceForm.reset();
+
+
+      } catch (error) {
+
+        console.error(
+          "Restore balance:",
+          error
+        );
+
+
+        showRestoreMessage(
+          error.message,
+          "error"
+        );
+
+
+      } finally {
+
+        if (restoreBalanceButton) {
+
+          restoreBalanceButton.disabled =
+            false;
+
+          restoreBalanceButton.textContent =
+            "💰 Restaurer le solde";
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/*
+========================================
+MESSAGE RESTAURATION
+========================================
+*/
+
+function showRestoreMessage(
+  message,
+  type
+) {
+
+  if (!restoreBalanceMessage)
+    return;
+
+
+  restoreBalanceMessage.textContent =
+    message;
+
+
+  if (type === "success") {
+
+    restoreBalanceMessage.style.color =
+      "#067647";
+
+  }
+
+  else if (type === "error") {
+
+    restoreBalanceMessage.style.color =
+      "#b42318";
+
+  }
+
+  else {
+
+    restoreBalanceMessage.style.color =
+      "#175cd1";
 
   }
 
@@ -464,73 +782,77 @@ async function loadOrders() {
     adminOrders.innerHTML = "";
 
 
-    orders.slice(0, 20).forEach(
-      order => {
+    orders
+      .slice(0, 20)
+      .forEach(
+        order => {
 
-        const card =
-          document.createElement("article");
+          const card =
+            document.createElement(
+              "article"
+            );
 
 
-        card.className =
-          "feature-card";
+          card.className =
+            "feature-card";
 
 
-        card.innerHTML = `
+          card.innerHTML = `
 
-          <p>
-            <strong>
-              Commande #${order.id}
-            </strong>
-          </p>
+            <p>
+              <strong>
+                Commande #${order.id}
+              </strong>
+            </p>
 
-          <p>
-            Client :
-            ${escapeHtml(
-              order.user_name || "—"
-            )}
-          </p>
-
-          <p>
-            Service :
-            ${escapeHtml(
-              order.service_name || "—"
-            )}
-          </p>
-
-          <p>
-            Quantité :
-            ${formatMoney(
-              order.quantity
-            )}
-          </p>
-
-          <p>
-            Montant :
-            <strong>
-              ${formatMoney(
-                order.price
-              )} CDF
-            </strong>
-          </p>
-
-          <p>
-            Statut :
-            <strong>
-              ${formatStatus(
-                order.status
+            <p>
+              Client :
+              ${escapeHtml(
+                order.user_name || "—"
               )}
-            </strong>
-          </p>
+            </p>
 
-        `;
+            <p>
+              Service :
+              ${escapeHtml(
+                order.service_name || "—"
+              )}
+            </p>
+
+            <p>
+              Quantité :
+              ${formatMoney(
+                order.quantity
+              )}
+            </p>
+
+            <p>
+              Montant :
+              <strong>
+                ${formatMoney(
+                  order.price
+                )} CDF
+              </strong>
+            </p>
+
+            <p>
+              Statut :
+              <strong>
+                ${formatStatus(
+                  order.status
+                )}
+              </strong>
+            </p>
+
+          `;
 
 
-        adminOrders.appendChild(
-          card
-        );
+          adminOrders.appendChild(
+            card
+          );
 
-      }
-    );
+        }
+      );
 
 
   } catch (error) {
@@ -660,7 +982,10 @@ function formatStatus(
       "❌ Annulé",
 
     rejected:
-      "❌ Refusé"
+      "❌ Refusé",
+
+    failed:
+      "❌ Échoué"
 
   };
 
@@ -711,65 +1036,3 @@ function escapeHtml(
     .replace(
       /&/g,
       "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
-
-}
-
-
-/*
-========================================
-DÉCONNEXION
-========================================
-*/
-
-if (adminLogout) {
-
-  adminLogout.addEventListener(
-    "click",
-    () => {
-
-      localStorage.removeItem(
-        "nosmyboost_token"
-      );
-
-      window.location.href =
-        "/login.html";
-
-    }
-  );
-
-}
-
-
-/*
-========================================
-DÉMARRAGE
-========================================
-*/
-
-async function initAdmin() {
-
-  await loadPendingDeposits();
-
-  await loadOrders();
-
-}
-
-
-initAdmin();
